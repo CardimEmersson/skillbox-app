@@ -1,13 +1,14 @@
 import { sizes } from '@/constants/Sizes';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { MaskType, applyMask } from '@/utils/masks';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, TextInput, View } from 'react-native';
-import { Spinner } from './Spinner';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Platform, Pressable, TextInput, View } from 'react-native';
+import { Spinner } from './Spinner';
 
 dayjs.extend(customParseFormat);
 
@@ -17,10 +18,11 @@ export type InputProps = React.ComponentProps<typeof TextInput> & {
   darkColor?: string;
   rightIcon?: React.ComponentProps<typeof AntDesign>['name'];
   isLoading?: boolean;
-  type?: 'password' | 'text' | 'date';
+  type?: 'password' | 'text' | 'date' | 'phone';
+  mask?: MaskType;
 };
 
-export function Input({ label, value, onChangeText, rightIcon, isLoading, editable = true, type = 'text', ...props }: InputProps) {
+export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChangeText, rightIcon, isLoading, editable = true, type = 'text', mask, ...props }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -60,6 +62,7 @@ export function Input({ label, value, onChangeText, rightIcon, isLoading, editab
 
   const isPassword = useMemo(() => type === 'password', [type]);
   const isDate = useMemo(() => type === 'date', [type]);
+  const isPhone = useMemo(() => type === 'phone', [type]);
 
   const togglePasswordVisibility = () => {
     setIsPasswordVisible(!isPasswordVisible);
@@ -99,6 +102,15 @@ export function Input({ label, value, onChangeText, rightIcon, isLoading, editab
     return new Date();
   };
 
+  const handleTextChange = (text: string) => {
+    if (mask && onChangeText) {
+      const maskedText = applyMask(mask, text);
+      onChangeText(maskedText);
+    } else if (onChangeText) {
+      onChangeText(text);
+    }
+  };
+
   return (
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
@@ -107,10 +119,11 @@ export function Input({ label, value, onChangeText, rightIcon, isLoading, editab
             {label}
           </Animated.Text>
           <TextInput
+            ref={ref}
             {...props}
             placeholder={isFocused ? props.placeholder : ""}
             value={value}
-            onChangeText={onChangeText}
+            onChangeText={handleTextChange}
             onFocus={(event) => {
               setIsFocused(true);
               if (isDate) {
@@ -124,6 +137,8 @@ export function Input({ label, value, onChangeText, rightIcon, isLoading, editab
             placeholderTextColor={placeholderColor}
             editable={!isDisabled && !isDate}
             secureTextEntry={isPassword && !isPasswordVisible}
+            maxLength={isPhone ? 15 : props.maxLength}
+            keyboardType={isPhone ? 'phone-pad' : props.keyboardType}
           />
           {rightIcon && !isPassword && !isDate && (
             <View className='absolute right-4'>
@@ -154,4 +169,6 @@ export function Input({ label, value, onChangeText, rightIcon, isLoading, editab
       )}
     </View>
   );
-};
+});
+
+Input.displayName = "Input";

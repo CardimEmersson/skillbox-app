@@ -23,4 +23,8 @@ export const Colors = {
     tabIconDefault: '#9BA1A6',
     tabIconSelected: tintColorDark,
   },
+  greenGradient: ['#A9FFEA', '#00B288'],
+  pinkGradient: ['#FFA0BC', '#FF1B5E'],
+  orangeGradient: ['#FFD29D', '#FF9E2D'],
+  blueGradient: ['#B1EEFF', '#29BAE2'],
 };

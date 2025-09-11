@@ -12,6 +12,8 @@ module.exports = {
         'link': "#4D81E7",
         'gray': '#6C7278',
         'headline': "#111827",
+        'bege': "#F6CFAC",
+        'text': '#371B34'
       },
       fontFamily: {
         'inter-bold': ['Inter_700Bold'],

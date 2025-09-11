@@ -54,9 +54,7 @@ export default function Login() {
         </Pressable>
         <CustomButton
           title='Entrar'
-          onPress={() => {
-            //
-          }}
+          onPress={() => router.push('/home')}
           className="w-full mb-2"
         />
 
