@@ -1,5 +1,6 @@
 import { SectionCaixaHabilidades } from '@/components/Home/SectionCaixaHabilidades';
 import { SectionCategorias } from '@/components/Home/SectionCategorias';
+import { SectionCursos } from '@/components/Home/SectionCursos';
 import { sizes } from '@/constants/Sizes';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image, SafeAreaView, ScrollView, Text, View } from "react-native";
@@ -30,6 +31,7 @@ export default function Home() {
 
           <SectionCaixaHabilidades className='mt-10' />
           <SectionCategorias className='mt-10' />
+          <SectionCursos className='mt-10' />
 
         </View>
       </ScrollView>
