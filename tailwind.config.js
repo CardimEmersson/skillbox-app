@@ -15,6 +15,7 @@ module.exports = {
         'blue': '#29BAE2',
         'link': "#4D81E7",
         'gray': '#6C7278',
+        'light-gray': '#E5E7EB',
         'headline': "#111827",
         'bege': "#F6CFAC",
         'text': '#371B34'
@@ -23,6 +24,7 @@ module.exports = {
         'inter-bold': ['Inter_700Bold'],
         'inter-regular': ['Inter_400Regular'],
         'inter-semibold': ['Inter_600SemiBold'],
+        'inter-light': ['Inter_300Light']
       },
       fontSize: {
         '14': '14px',

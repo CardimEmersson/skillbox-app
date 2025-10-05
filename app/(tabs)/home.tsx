@@ -1,9 +1,8 @@
+import { HeaderProfile } from '@/components/Home/HeaderProfile';
 import { SectionCaixaHabilidades } from '@/components/Home/SectionCaixaHabilidades';
 import { SectionCategorias } from '@/components/Home/SectionCategorias';
 import { SectionCursos } from '@/components/Home/SectionCursos';
-import { sizes } from '@/constants/Sizes';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { SafeAreaView, ScrollView, Text, View } from "react-native";
 
 export default function Home() {
 
@@ -15,7 +14,7 @@ export default function Home() {
         automaticallyAdjustKeyboardInsets
       >
         <View className='w-full flex pt-10 px-8 pb-8'>
-          <View className="w-full flex-row justify-between items-center mb-5">
+          {/* <View className="w-full flex-row justify-between items-center mb-5">
             <Image
               source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }}
               className="w-16 h-16 rounded-full border-4 border-bege"
@@ -26,7 +25,8 @@ export default function Home() {
                 <Text className='color-white font-bold text-sm'>3</Text>
               </View>
             </View>
-          </View>
+          </View> */}
+          <HeaderProfile />
           <Text className="text-3xl font-inter-regular color-text">Olá, <Text className="font-bold">Maria!</Text></Text>
 
           <SectionCaixaHabilidades className='mt-10' />
