@@ -1,10 +1,12 @@
 import { ListCard } from '@/components/MinhasHabilidades/ListCard';
 import { HeaderList } from '@/components/ui/HeaderList';
+import { useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 
 
 export default function MinhasHabilidades() {
+  const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const habilidades = [
@@ -67,7 +69,7 @@ export default function MinhasHabilidades() {
       <View className='w-full flex pt-10 px-8 pb-8'>
         <HeaderList 
           onPressAdd={() => {
-            //
+            router.push('/cadastroHabilidade')
           }}
           title="Minhas habilidades"
         />
@@ -81,10 +83,12 @@ export default function MinhasHabilidades() {
               onPress={() => {
                 //
               }}
+              percentual={50}
             />
           )}
           showsVerticalScrollIndicator={false}
           contentContainerClassName="flex-grow"
+          contentContainerStyle={{ paddingBottom: 50 }}
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
         />
       </View>

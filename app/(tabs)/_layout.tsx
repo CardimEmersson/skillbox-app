@@ -102,6 +102,12 @@ export default function TabLayout() {
         />
         <Tabs.Screen name="minhasHabilidades" options={{ href: null }} />
         <Tabs.Screen name="projetos" options={{ href: null }} />
+        <Tabs.Screen name="metas" options={{ href: null }} />
+        <Tabs.Screen name="cursos" options={{ href: null }} />
+        <Tabs.Screen name="cadastroHabilidade" options={{ href: null }} />
+        <Tabs.Screen name="cadastroProjeto" options={{ href: null }} />
+        <Tabs.Screen name="cadastroMeta" options={{ href: null }} />
+        <Tabs.Screen name="cadastroCurso" options={{ href: null }} />
       </Tabs>
       <ActionModal isVisible={isModalVisible} onClose={toggleModal} />
     </View>

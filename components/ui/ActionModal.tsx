@@ -34,7 +34,7 @@ export function ActionModal({ isVisible, onClose }: ActionModalProps) {
           <CustomButton
             title="Projeto"
             onPress={() => {
-             router.push('/projetos')
+              router.push('/projetos')
               onClose();
             }}
             className='w-full mb-2'
@@ -43,7 +43,7 @@ export function ActionModal({ isVisible, onClose }: ActionModalProps) {
           <CustomButton
             title="Meta"
             onPress={() => {
-              // Lógica para criar caixa de habilidade
+              router.push('/metas')
               onClose();
             }}
             className='w-full mb-2'
@@ -52,7 +52,7 @@ export function ActionModal({ isVisible, onClose }: ActionModalProps) {
           <CustomButton
             title="Curso"
             onPress={() => {
-              // Lógica para criar caixa de habilidade
+              router.push('/cursos')
               onClose();
             }}
             className='w-full mb-2'

@@ -7,7 +7,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Platform, Pressable, TextInput, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Spinner } from './Spinner';
 
 dayjs.extend(customParseFormat);
@@ -114,8 +114,8 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
   return (
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
-        <View style={{ backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor }} className='rounded-lg justify-center h-[58px]'>
-          <Animated.Text style={[labelStyle, {color: isDisabled ? disabledTextColor : labelStyle.color}]} className='absolute left-4'>
+        <View style={[{ backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor }, styles.inputContainer]} className={`rounded-lg justify-center ${props.multiline ? 'h-auto' : 'min-h-[58px]'}`}>
+          <Animated.Text style={[labelStyle, { color: isDisabled ? disabledTextColor : labelStyle.color }]} className='absolute left-4'>
             {label}
           </Animated.Text>
           <TextInput
@@ -133,7 +133,7 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
             }}
             onBlur={onBlur}
             style={{ color: isDisabled ? disabledTextColor : color }}
-            className={`h-[58px] text-base px-4 pt-7 ${rightIcon || isLoading || isPassword ? 'pr-12' : ''}`}
+            className={`${props.multiline ? 'h-32 pt-7' : 'min-h-[58px] pt-7'} text-base px-4 ${rightIcon || isLoading || isPassword ? 'pr-12' : ''}`}
             placeholderTextColor={placeholderColor}
             editable={!isDisabled && !isDate}
             secureTextEntry={isPassword && !isPasswordVisible}
@@ -172,3 +172,18 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
 });
 
 Input.displayName = "Input";
+
+export const shadowInput = {
+  shadowColor: '#000',
+  shadowOffset: {
+    width: 0,
+    height: 1,
+  },
+  shadowOpacity: 0.20,
+  shadowRadius: 1.41,
+  elevation: 4,
+}
+
+const styles = StyleSheet.create({
+  inputContainer: shadowInput,
+});

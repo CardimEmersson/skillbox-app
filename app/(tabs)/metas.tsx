@@ -1,33 +1,29 @@
-import { ListCard } from "@/components/Projetos/ListCard";
+import { ListCard } from "@/components/Metas/ListCard";
 import { HeaderList } from "@/components/ui/HeaderList";
 import { useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 
-const projetos = [
+const metas = [
   {
     id: '1',
-    name: 'Projeto 1',
-    description: 'Desenvolvi um app de controle financeiro pessoal com foco em simplicidade e visualização clara dos gastos.',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
+    name: 'Meta 1',
+    subtitle: 'Até 30 de setembro'
   },
   {
     id: '2',
-    name: 'Projeto 2',
-    description: 'Descrição do projeto 2',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
+    name: 'Meta 2',
+    subtitle: 'Concluido'
   },
   {
     id: '3',
-    name: 'Projeto 3',
-    description: 'Descrição do projeto 3',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
+    name: 'Meta 3',
+    subtitle: 'Em aberto'
   },
 ];
 
-
-export default function Projetos() {
-  const router = useRouter();
+export default function Metas() {
+   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = useCallback(() => {
@@ -42,21 +38,21 @@ export default function Projetos() {
       <View className='w-full flex pt-10 px-8 pb-8'>
         <HeaderList
           onPressAdd={() => {
-            router.push('/cadastroProjeto');
+            router.push('/cadastroMeta');
           }}
-          title="Projetos"
+          title="Metas"
         />
         <FlatList
-          data={projetos}
+          data={metas}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <ListCard
               name={item.name}
-              description={item.description}
+              subtitle={item.subtitle}
+              percentual={50}
               onPress={() => {
                 //
               }}
-              habilidades={item.habilidades}
             />
           )}
           showsVerticalScrollIndicator={false}
