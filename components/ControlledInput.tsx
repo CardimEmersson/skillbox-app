@@ -15,7 +15,7 @@ export const ControlledInput = forwardRef<TextInput, ControlledInputProps>(({ co
     <Controller
       control={control}
       name={name}
-      render={({ field: { onChange, value: controlledValue } }) => (
+      render={({ field: { onChange, value: controlledValue }, fieldState: { error } }) => (
         <Input
           ref={ref}
           {...props}
@@ -26,6 +26,7 @@ export const ControlledInput = forwardRef<TextInput, ControlledInputProps>(({ co
             onChange(text);
             props?.onChangeText?.(text);
           }}
+          error={error?.message}
         />
       )}
     />

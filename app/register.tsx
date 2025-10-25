@@ -2,12 +2,16 @@ import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { ControlledInput } from "@/components/ControlledInput";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { sizes } from '@/constants/Sizes';
-import { RegisterDataForm } from '@/interfaces/register';
+import { RegisterSchema } from '@/data/shemas/registerSchema';
+import { IPostRegister, RegisterDataForm } from '@/interfaces/register';
+import { postRegister } from '@/services/modules/registerService';
 import AntDesign from '@expo/vector-icons/AntDesign';
+import { yupResolver } from '@hookform/resolvers/yup';
 import { useRouter } from "expo-router";
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
+import Toast from 'react-native-toast-message';
 
 
 export default function Register() {
@@ -20,11 +24,43 @@ export default function Register() {
   const inputSenhaRef = useRef<TextInput>(null);
   const inputConfirmarSenhaRef = useRef<TextInput>(null);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const {
-    control
+    control,
+    handleSubmit
   } = useForm<RegisterDataForm>({
-    // resolver: yupResolver(LoginSchema)
+    resolver: yupResolver(RegisterSchema)
   });
+
+  async function handleRegister(data: RegisterDataForm) {
+    setIsSubmitting(true);
+    try {
+      const dataPost: IPostRegister = {
+        nome: data.nome,
+        dataNascimento: data.dataNascimento,
+        telefone: data.telefone,
+        senha: data.senha,
+        email: data.email,
+        sobrenome: data.sobrenome
+      }
+      console.log(dataPost);
+      const result = await postRegister(dataPost);
+
+      if (result) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso!',
+          text2: 'Sua conta foi criada.',
+        });
+        router.push('/login');
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro no cadastro', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   function focusInput(nameInput: string) {
     switch (nameInput) {
@@ -131,6 +167,7 @@ export default function Register() {
                   mask='phone'
                   className='mb-4'
                   returnKeyType='next'
+                  onSubmitEditing={() => focusInput('senha')}
                 />
                 <ControlledInput
                   ref={inputSenhaRef}
@@ -141,6 +178,7 @@ export default function Register() {
                   placeholder='********'
                   className='mb-4'
                   returnKeyType='next'
+                  onSubmitEditing={() => focusInput('confirmarSenha')}
                 />
                 <ControlledInput
                   ref={inputConfirmarSenhaRef}
@@ -154,10 +192,8 @@ export default function Register() {
                 />
                 <CustomButton
                   title='Cadastrar'
-                  onPress={() => {
-                    //
-                  }}
-                  className="w-full mb-2"
+                  onPress={handleSubmit(handleRegister)}
+                  className="w-full mb-2" isLoading={isSubmitting}
                 />
 
                 <View className="flex-row justify-center items-center w-full my-2">
