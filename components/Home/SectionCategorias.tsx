@@ -1,5 +1,6 @@
 import AntDesign from '@expo/vector-icons/AntDesign';
-import { ScrollView, Text, View } from "react-native";
+import { useRouter } from 'expo-router';
+import { ScrollView, Text, View } from 'react-native';
 import AppleIcon from '../../assets/icons/apple.svg';
 import { CategoryItem } from '../ui/CategoryItem';
 
@@ -18,14 +19,22 @@ const categories = [
 ];
 
 export function SectionCategorias({className}: SectionCategoriasProps) {
+  const router = useRouter();
+
+  const handleCategoryPress = (categoryTitle: string) => {
+    router.push({
+      pathname: '/recomendacoesCursos',
+      params: { category: categoryTitle },
+    });
+  };
 
   return (
     <View className={`w-full ${className}`}>
       <Text className='font-bold text-2xl color-text mb-2'>Categorias recomendadas</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 5 }}>
-        {categories.map((category, index) => (
-          <CategoryItem key={index} title={category.title} className={category.className} icon={category.icon} />
+        {categories.map((category) => (
+          <CategoryItem key={category.title} title={category.title} className={category.className} icon={category.icon} onPress={() => handleCategoryPress(category.title)} />
         ))}
       </ScrollView>
     </View>

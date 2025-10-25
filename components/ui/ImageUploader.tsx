@@ -9,9 +9,10 @@ import { Alert, Image, Pressable, StyleSheet } from 'react-native';
 interface ImageUploaderProps {
   image: string | null;
   setImage: (uri: string | null) => void;
+  disabled?: boolean;
 }
 
-export function ImageUploader({ image, setImage }: ImageUploaderProps) {
+export function ImageUploader({ image, setImage, disabled }: ImageUploaderProps) {
   const color = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#ffffff10' }, 'background');
 
@@ -26,7 +27,7 @@ export function ImageUploader({ image, setImage }: ImageUploaderProps) {
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: 'images',
       allowsEditing: true,
       aspect: [1, 1],
       quality: 1,
@@ -39,7 +40,7 @@ export function ImageUploader({ image, setImage }: ImageUploaderProps) {
   };
 
   return (
-    <Pressable onPress={pickImage} style={[styles.container, { backgroundColor }]}>
+    <Pressable onPress={pickImage} style={[styles.container, { backgroundColor }]} disabled={disabled}>
       {image ? (
         <Image source={{ uri: image }} style={styles.image} />
       ) : (

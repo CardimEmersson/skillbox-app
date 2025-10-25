@@ -222,13 +222,13 @@ export default function CadastroHabilidade() {
               ))}
             </View>
           </View>
-            <CustomButton
-              title='Salvar'
-              onPress={() => {
-                //
-              }}
-              className="w-full mb-2 mt-auto"
-            />
+          <CustomButton
+            title='Salvar'
+            onPress={() => {
+              //
+            }}
+            className="w-full mb-2 mt-auto"
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

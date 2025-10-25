@@ -81,7 +81,7 @@ export default function TabLayout() {
           }}
         />
         <Tabs.Screen
-          name="explore"
+          name="usuario"
           options={{
             tabBarLabel: "",
             tabBarIcon: ({ color, size, focused }) => (
@@ -108,6 +108,9 @@ export default function TabLayout() {
         <Tabs.Screen name="cadastroProjeto" options={{ href: null }} />
         <Tabs.Screen name="cadastroMeta" options={{ href: null }} />
         <Tabs.Screen name="cadastroCurso" options={{ href: null }} />
+        <Tabs.Screen name="cadastroUsuario" options={{ href: null }} />
+        <Tabs.Screen name="recomendacoesCursos" options={{ href: null }} />
+        <Tabs.Screen name="notificacoes" options={{ href: null }} />
       </Tabs>
       <ActionModal isVisible={isModalVisible} onClose={toggleModal} />
     </View>
