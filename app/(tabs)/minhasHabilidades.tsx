@@ -1,88 +1,86 @@
 import { ListCard } from '@/components/MinhasHabilidades/ListCard';
+import { ListCardSkeleton } from '@/components/MinhasHabilidades/ListCard.skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { HeaderList } from '@/components/ui/HeaderList';
-import { useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { AuthContext } from '@/comtexts/authContext';
+import { getHabilidades } from '@/services/modules/habilidadeService';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { useCallback, useContext, useState } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import Toast from 'react-native-toast-message';
 
 interface IHabilidadeListItem {
-  id: number;
+  id: number | string;
   name: string;
   nivel: string;
+  imagem?: string | null;
+  percentual: number;
 }
 
-const mockHabilidades: IHabilidadeListItem[] = [
-    {
-      id: 1,
-      name: 'Python',
-      nivel: 'Intermediario',
-    },
-    {
-      id: 2,
-      name: 'React',
-      nivel: 'Iniciante',
-    },
-    {
-      id: 3,
-      name: 'JavaScript',
-      nivel: 'Avançado',
-    },
-    {
-      id: 4,
-      name: 'Python',
-      nivel: 'Intermediario',
-    },
-    {
-      id: 5,
-      name: 'React',
-      nivel: 'Iniciante',
-    },
-    {
-      id: 6,
-      name: 'JavaScript',
-      nivel: 'Avançado',
-    },
-    {
-      id: 7,
-      name: 'Python',
-      nivel: 'Intermediario',
-    },
-    {
-      id: 8,
-      name: 'React',
-      nivel: 'Iniciante',
-    },
-    {
-      id: 9,
-      name: 'JavaScript',
-      nivel: 'Avançado',
-    },
-  ];
+const percentualHabilidade = {
+  "iniciante": 10,
+  "intermediario": 50,
+  "avancado": 100,
+}
 
 export default function MinhasHabilidades() {
   const router = useRouter();
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [habilidades, setHabilidades] = useState<IHabilidadeListItem[]>(mockHabilidades);
-
   
+  const { userAuth } = useContext(AuthContext);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [habilidades, setHabilidades] = useState<IHabilidadeListItem[]>([]);
 
-  const handleRefresh = useCallback(() => {
+  async function gethabilidadesData() {
+    setIsLoadingData(true);
+    try {
+      const result = await getHabilidades(userAuth?.id ?? "");
+
+      const formatedItems: IHabilidadeListItem[] = result?.map((item) => {
+        return {
+          id: item.id,
+          name: item.nome,
+          nivel: item.proficiencia,
+          percentual: percentualHabilidade[item.proficiencia],
+          imagem: ""
+        }
+      }) ?? [];
+
+      setHabilidades(formatedItems);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 2000);
+    await gethabilidadesData();
+    setIsRefreshing(false);
   }, []);
+
+  useFocusEffect(useCallback(() => {
+    gethabilidadesData();
+  }, []));
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <View className='w-full flex-1 pt-10 px-8 pb-8'>
-        <HeaderList 
+        <HeaderList
           onPressAdd={() => {
             router.push('/cadastroHabilidade')
           }}
           title="Minhas habilidades"
         />
-        <FlatList
+        {isLoadingData ? (
+          <>
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+          </>
+        ) : <FlatList
           data={habilidades}
           keyExtractor={(item) => item.id?.toString()}
           renderItem={({ item }) => (
@@ -90,9 +88,13 @@ export default function MinhasHabilidades() {
               name={item.name}
               nivel={item.nivel}
               onPress={() => {
-                //
+                router.push({
+                  pathname: '/cadastroHabilidade',
+                  params: { id: item.id },
+                });
               }}
-              percentual={50}
+              percentual={item.percentual}
+              image={item.imagem}
             />
           )}
           showsVerticalScrollIndicator={false}
@@ -106,8 +108,10 @@ export default function MinhasHabilidades() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-          
-        />
+
+        />}
+
+
       </View>
     </SafeAreaView>
   )

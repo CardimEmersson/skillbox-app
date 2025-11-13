@@ -1,15 +1,21 @@
+import { ControlledAutocomplete } from "@/components/ControlledAutocomplete";
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
-import { BadgeClose, BadgetCloseGradient, CustomButton, SelectOption } from "@/components/ui";
+import { BadgeClose, BadgetCloseGradient, ConfirmationModal, CustomButton, SelectOption } from "@/components/ui";
 import { HeaderList } from "@/components/ui/HeaderList";
 import { ImageUploader } from "@/components/ui/ImageUploader";
+import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
-import { CadastroHabilidadeDataForm } from "@/interfaces/cadastroHabilidade";
+import { HabilidadeSchema } from "@/data/shemas/habilidadeSchema";
+import { CadastroHabilidadeDataForm, IPostHabilidade } from "@/interfaces/cadastroHabilidade";
+import { deleteHabilidade, getCategorias, getHabilidadeById, postCategoria, postHabilidade } from "@/services/modules/habilidadeService";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 export type SelectionOptionCursoProjeto = {
   tipo: "curso" | "projeto";
@@ -20,23 +26,6 @@ const optionsProficiencia: SelectOption[] = [
   { label: 'Iniciante', value: 'iniciante' },
   { label: 'Intermediario', value: 'intermediario' },
   { label: 'Avançado', value: 'avancado' },
-];
-
-const optionsCategorias: SelectOption[] = [
-  { label: 'Categoria 01', value: 1 },
-  { label: 'Categoria 02', value: 2 },
-  { label: 'Categoria 03', value: 3 },
-  { label: 'Categoria 03', value: 4 },
-  { label: 'Categoria 03', value: 5 },
-  { label: 'Categoria 03', value: 6 },
-  { label: 'Categoria 03', value: 7 },
-  { label: 'Categoria 03', value: 8 },
-  { label: 'Categoria 03', value: 9 },
-  { label: 'Categoria 03', value: 10 },
-  { label: 'Categoria 03', value: 11 },
-  { label: 'Categoria 03', value: 12 },
-  { label: 'Categoria 03', value: 13 },
-  { label: 'Categoria 03', value: 14 },
 ];
 
 const optionsCursosProjetos: SelectionOptionCursoProjeto[] = [
@@ -58,20 +47,45 @@ const defaultValuesCadatroHabilidade: CadastroHabilidadeDataForm = {
 
 export default function CadastroHabilidade() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string }>();
+  const { userAuth } = useContext(AuthContext);
   const [image, setImage] = useState<string | null>("");
+  const [initialOptionsCategorias, setInitialOptionsCategorias] = useState<SelectOption[]>([]);
+  const [optionsCategorias, setOptionsCategorias] = useState<SelectOption[]>([]);
+  const [inputValueCategoria, setInputValueCategoria] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isLoadingCategorias, setIsLoadingCategorias] = useState(false);
 
   const {
     control,
     watch,
     getValues,
-    setValue
+    setValue,
+    handleSubmit,
+    reset
   } = useForm<CadastroHabilidadeDataForm>({
-    defaultValues: defaultValuesCadatroHabilidade
+    defaultValues: defaultValuesCadatroHabilidade,
+    resolver: yupResolver(HabilidadeSchema) as any,
   });
+
+  function handleAddNovaCategoria(novaCategoria: string) {
+    const findedCategoria = optionsCategorias?.find((categoria) => categoria.label === novaCategoria)
+    if (findedCategoria) return findedCategoria;
+
+    const novaOpcao: SelectOption = {
+      label: novaCategoria,
+      value: novaCategoria.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    };
+
+    setOptionsCategorias(prev => [...prev, novaOpcao]);
+    return novaOpcao;
+  }
 
   function onAddCategoria() {
     if (watch().categoriaSelecionada) {
-      const categoriaSelecionada: number = getValues().categoriaSelecionada ?? 0;
+      const categoriaSelecionada = getValues().categoriaSelecionada ?? "";
       const findedCategoria = getValues().categorias.find((categoria) => categoria === watch().categoriaSelecionada);
 
       if (!findedCategoria) {
@@ -80,6 +94,7 @@ export default function CadastroHabilidade() {
           shouldValidate: true,
         });
       }
+      setInputValueCategoria('');
     }
     setValue("categoriaSelecionada", undefined, {
       shouldDirty: true,
@@ -87,7 +102,7 @@ export default function CadastroHabilidade() {
     });
   }
 
-  function onRemoveCategoria(categoria: number) {
+  function onRemoveCategoria(categoria: string) {
     const filteredCategorias = getValues().categorias.filter((item) => item !== categoria);
     setValue("categorias", filteredCategorias, {
       shouldDirty: true,
@@ -130,6 +145,149 @@ export default function CadastroHabilidade() {
     });
   }
 
+  function handleInputValueCategoria(value: string) {
+    setInputValueCategoria(value);
+  }
+
+  async function postCategoriasData(categorias: SelectOption[]): Promise<SelectOption[]> {
+    if (categorias.length) {
+      const nomesCategorias = categorias.map((item) => item.label);
+
+      if (nomesCategorias.length) {
+        const promises = nomesCategorias.map((nome) => postCategoria({
+          idUser: userAuth?.id ?? "",
+          nome
+        }));
+        const result = await Promise.all(promises);
+
+        if (result.length) {
+          const options: SelectOption[] = result?.map((item) => {
+            return {
+              label: item?.nome ?? "",
+              value: item?.id ?? "",
+            }
+          });
+          return options;
+        }
+      }
+    }
+    return [];
+  }
+
+  async function handleSubmitHabilidade(data: CadastroHabilidadeDataForm) {
+    setIsSubmitting(true);
+    try {
+      const categoriasSelecionadas = optionsCategorias.filter((item) => data.categorias.includes(item.value));
+      const novasCategoriasParaCriar = categoriasSelecionadas.filter((item) => !initialOptionsCategorias.some(initial => initial.value === item.value));
+      const categoriasExistentes = categoriasSelecionadas.filter((item) => !novasCategoriasParaCriar.some(nova => nova.value === item.value));
+
+      const categoriasCriadas = await postCategoriasData(novasCategoriasParaCriar);
+
+      const categoriasHabilidade = [...categoriasExistentes, ...categoriasCriadas].map((item) => {
+        return item.value
+      });
+
+      const postData: IPostHabilidade = {
+        categorias: categoriasHabilidade,
+        nome: data.nome,
+        proficiencia: data.proficiencia,
+        cursosProjetos: [],
+        idUser: userAuth?.id ?? "",
+      }
+
+      const result = await postHabilidade(postData);
+
+      if (result) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso!',
+          text2: 'Habilidade criada com sucesso!',
+        });
+        router.push('/minhasHabilidades');
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDeleteHabilidade() {
+    if (!params.id) return;
+    setIsSubmitting(true);
+    try {
+      await deleteHabilidade(params.id);
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso!',
+        text2: 'Habilidade excluída com sucesso!',
+      });
+      router.push('/minhasHabilidades');
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro ao excluir', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsSubmitting(false);
+      setIsDeleteModalVisible(false);
+    }
+  }
+
+  async function getCategoriasData() {
+    setIsLoadingCategorias(true);
+    try {
+      const result = await getCategorias(userAuth?.id ?? "");
+
+      if (result.length) {
+        const options: SelectOption[] = result.map((item) => {
+          return {
+            label: item.nome,
+            value: item.id,
+          }
+        });
+
+        setOptionsCategorias(options);
+        setInitialOptionsCategorias(options);
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na categoria', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingCategorias(false);
+    }
+  }
+
+  async function getHabilidadeByIdData(idHabilidade: string) {
+    setIsLoadingData(true);
+    try { 
+      const result = await getHabilidadeById(idHabilidade);
+      if (result) {
+        reset({
+          categorias: result.categorias,
+          cursosProjetos: [],
+          icone: "",
+          nome: result.nome,
+          proficiencia: result.proficiencia,
+        });
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+
+      getCategoriasData();
+
+      params.id && getHabilidadeByIdData(params.id);
+
+      return () => {
+        reset(defaultValuesCadatroHabilidade);
+        setImage("");
+      };
+    }, [reset, params.id])
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
@@ -138,14 +296,17 @@ export default function CadastroHabilidade() {
       >
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
-            onPressAdd={() => {
-              //
-            }}
             title="Cadastrar habilidade"
             onBack={() => {
               router.push('/minhasHabilidades')
             }}
             disabledAdd
+            hasAdd={false}
+            hasDelete
+            disabledDelete={!params.id}
+            onPressDelete={() => {
+              setIsDeleteModalVisible(true);
+            }}
           />
 
           <View className="w-full items-center mb-6 mt-6">
@@ -161,6 +322,7 @@ export default function CadastroHabilidade() {
               placeholder='Nome'
               className='mb-4'
               returnKeyType='next'
+              isLoading={isLoadingData}
             />
             <ControlledSelect
               control={control}
@@ -170,15 +332,20 @@ export default function CadastroHabilidade() {
               className='mb-4'
               returnKeyType='next'
               options={optionsProficiencia}
+              isLoading={isLoadingData}
             />
             <View className="flex flex-row items-center justify-between mb-4 w-full">
-              <ControlledSelect
+              <ControlledAutocomplete
                 control={control}
                 label='Categoria'
                 name='categoriaSelecionada'
                 placeholder='Categoria'
                 className='w-3/4'
                 options={optionsCategorias}
+                onAddOption={handleAddNovaCategoria}
+                handleInputValue={handleInputValueCategoria}
+                inputValue={inputValueCategoria}
+                isLoading={isLoadingCategorias || isLoadingData}
               />
               <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCategoria}>
                 <Ionicons name="add-circle" size={40} color="black" />
@@ -224,13 +391,22 @@ export default function CadastroHabilidade() {
           </View>
           <CustomButton
             title='Salvar'
-            onPress={() => {
-              //
-            }}
-            className="w-full mb-2 mt-auto"
+            onPress={handleSubmit(handleSubmitHabilidade)}
+            className={"w-full mb-1 mt-auto"}
+            isLoading={isSubmitting}
           />
         </View>
       </KeyboardAvoidingView>
+      <ConfirmationModal
+        isVisible={isDeleteModalVisible}
+        onClose={() => setIsDeleteModalVisible(false)}
+        onConfirm={handleDeleteHabilidade}
+        title="Confirmar Exclusão"
+        message="Tem certeza de que deseja excluir esta habilidade? Esta ação não pode ser desfeita."
+        confirmButtonText="Sim, Excluir"
+        isConfirming={isSubmitting}
+      />
+      <Toast />
     </SafeAreaView>
   )
 }

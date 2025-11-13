@@ -6,8 +6,10 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import "../global.css";
 
+import { AuthProvider } from "@/comtexts/authContext";
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect } from 'react';
+import Toast from 'react-native-toast-message';
 
 SplashScreen.setOptions({
   duration: 1000,
@@ -38,15 +40,16 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        {/* <Stack.Screen name="(tabs)" options={{ headerShown: false }} /> */}
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        {/* <Stack.Screen name="home" options={{ headerShown: false }} /> */}
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      <Toast />
+      <AuthProvider>
+        <Stack>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </AuthProvider>
       <StatusBar style="auto" />
     </ThemeProvider>
   );

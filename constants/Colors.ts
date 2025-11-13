@@ -25,6 +25,8 @@ export const Colors = {
   },
   greenGradient: ['#A9FFEA', '#00B288'],
   pinkGradient: ['#FFA0BC', '#FF1B5E'],
+  redGradient: ['#FF6B6B', '#FF1A1A'],
   orangeGradient: ['#FFD29D', '#FF9E2D'],
   blueGradient: ['#B1EEFF', '#29BAE2'],
+  grayGradient: ['#F5F5F5', '#E0E0E0'],
 };

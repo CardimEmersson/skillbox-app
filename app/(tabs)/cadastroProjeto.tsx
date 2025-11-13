@@ -237,14 +237,14 @@ export default function CadastroProjeto() {
               images={watch().imagens}
               setImages={(images) => setValue('imagens', images)}
             />
+            <CustomButton
+              title='Salvar'
+              onPress={() => {
+                //
+              }}
+              className="w-full mb-2 mt-auto"
+            />
           </ScrollView>
-          <CustomButton
-            title='Salvar'
-            onPress={() => {
-              //
-            }}
-            className="w-full mb-2 mt-auto"
-          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

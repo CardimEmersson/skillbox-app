@@ -8,5 +8,9 @@ export function getErrorsByApi(error: AxiosError, defaultMessage?: string) {
 		throw new Error(response.message);
 	}
 
+	if (error.message) {
+		throw new Error(error.message);
+	}
+
 	throw new Error(defaultMessage ?? "Tivemos problemas ao realizar essa ação");
 }

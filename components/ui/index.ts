@@ -2,6 +2,7 @@ export * from './ActionModal';
 export * from './BadgeClose';
 export * from './CategoryItem';
 export * from './Checkbox';
+export * from './ConfirmationModal';
 export * from './CursoItem';
 export * from './CustomButton';
 export * from './HeaderList';

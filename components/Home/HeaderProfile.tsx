@@ -1,18 +1,29 @@
+import { AuthContext } from "@/comtexts/authContext";
 import { sizes } from "@/constants/Sizes";
+import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
+
 import { useRouter } from "expo-router";
+import { useContext } from "react";
 import { Image, Pressable, Text, View } from "react-native";
 
 
 export function HeaderProfile() {
+  const {userAuth} = useContext(AuthContext);
   const router = useRouter();
 
   return (
     <View className="w-full flex-row justify-between items-center mb-5">
-      <Image
-        source={{ uri: 'https://randomuser.me/api/portraits/women/44.jpg' }}
-        className="w-16 h-16 rounded-full border-4 border-bege"
-      />
+      {userAuth?.imagem ? (
+        <Image
+          source={{ uri: userAuth.imagem }}
+          className="w-16 h-16 rounded-full border-4 border-bege"
+        />
+      ) : (
+        <View className="w-16 h-16 rounded-full border-4 border-bege bg-primary-light items-center justify-center">
+          <Feather name="user" size={24} />
+        </View>
+      )}
 
       <View className='relative'>
         <Pressable onPress={() => {
