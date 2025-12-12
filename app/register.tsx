@@ -175,6 +175,7 @@ export default function Register() {
                     placeholder='(00) 00000-0000'
                     type='phone'
                     mask='phone'
+                    keyboardType='name-phone-pad'
                     className='mb-4'
                     returnKeyType='next'
                     onSubmitEditing={() => focusInput('senha')}

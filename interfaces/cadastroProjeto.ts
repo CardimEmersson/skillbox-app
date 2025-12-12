@@ -25,6 +25,7 @@ export interface IPostProjeto {
   link: string;
   cursos: string[];
   idUser: string;
+  imagens: string[];
 }
 
 export interface IGetProjeto {
@@ -40,4 +41,5 @@ export interface IGetProjeto {
   nome: string;
   periodo: string;
   tipoProjeto: string;
+  imagens: string[];
 }

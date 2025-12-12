@@ -323,6 +323,7 @@ export default function CadastroCurso() {
               placeholder='https://'
               className='mb-4'
               returnKeyType='next'
+              keyboardType="url"
               isLoading={isLoadingData}
             />
             <ThemedText className='mb-2'>Upload de imagens</ThemedText>

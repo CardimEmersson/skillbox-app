@@ -209,7 +209,6 @@ export default function CadastroHabilidade() {
         setTimeout(() => router.push('/minhasHabilidades'), 300);
       }
     } catch (error: any) {
-      console.log("error", error);
       Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
       setIsSubmitting(false);

@@ -9,6 +9,7 @@ export type UserAuthType = {
   telefone: string;
   senha: string;
   imagem: string;
+  bio: string;
 }
 
 interface AuthContextProps {

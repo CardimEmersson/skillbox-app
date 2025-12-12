@@ -66,6 +66,7 @@ export default function Login() {
             placeholder='@email.com'
             className='mb-4'
             returnKeyType='next'
+            keyboardType='email-address'
             onSubmitEditing={() => inputSenhaRef?.current?.focus()}
           />
           <ControlledInput

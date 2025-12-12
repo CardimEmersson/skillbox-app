@@ -25,9 +25,9 @@ export async function putMeta(idMeta: string, data: IPostMeta): Promise<boolean>
   return false;
 }
 
-export async function getMetas(idUser: string): Promise<IGetMeta[]> {
+export async function getMetas(idUser: string, params?: string): Promise<IGetMeta[]> {
   try {
-    const responseData = await api.get<IGetMeta[]>(`/metas?idUser=${idUser}`).then((response) => response.data);
+    const responseData = await api.get<IGetMeta[]>(`/metas?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

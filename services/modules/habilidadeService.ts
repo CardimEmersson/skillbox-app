@@ -25,10 +25,9 @@ export async function putHabilidade(idHabilidade: string, data: IPostHabilidade)
   return false;
 }
 
-export async function getHabilidades(idUser: string): Promise<IGetHabilidade[]> {
+export async function getHabilidades(idUser: string, params?: string): Promise<IGetHabilidade[]> {
   try {
-    const responseData = await api.get<IGetHabilidade[]>(`/habilidades?idUser=${idUser}`).then((response) => response.data);
-
+    const responseData = await api.get<IGetHabilidade[]>(`/habilidades?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
     return responseData;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél listar as habilidades! Tente mais tarde");

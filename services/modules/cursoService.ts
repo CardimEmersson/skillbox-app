@@ -25,9 +25,9 @@ export async function putCurso(idCurso: string, data: IPostCurso): Promise<boole
   return false;
 }
 
-export async function getCursos(idUser: string): Promise<IGetCurso[]> {
+export async function getCursos(idUser: string, params?: string): Promise<IGetCurso[]> {
   try {
-    const responseData = await api.get<IGetCurso[]>(`/cursos?idUser=${idUser}`).then((response) => response.data);
+    const responseData = await api.get<IGetCurso[]>(`/cursos?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

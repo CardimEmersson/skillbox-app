@@ -179,6 +179,7 @@ export default function CadastroProjeto() {
         idUser: userAuth?.id ?? "",
         link: data.link,
         tipoProjeto: data.tipoProjeto,
+        imagens: data.imagens,
       };
 
       let result;
@@ -352,6 +353,7 @@ export default function CadastroProjeto() {
               label='Link ou Repositório'
               name='link'
               placeholder='https://'
+              keyboardType="url"
               className='mb-4'
               returnKeyType='next'
               isLoading={isLoadingData}

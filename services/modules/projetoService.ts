@@ -16,7 +16,7 @@ export async function postProjeto(data: IPostProjeto): Promise<boolean> {
 export async function putProjeto(idProjeto: string, data: IPostProjeto): Promise<boolean> {
   if (!idProjeto) throw new Error("Id do projeto não informado");
   try {
-    const responseData = await api.post<string>(`/projetos/${idProjeto}`, data).then((response) => response.data);
+    const responseData = await api.put<string>(`/projetos/${idProjeto}`, data).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {
@@ -25,9 +25,9 @@ export async function putProjeto(idProjeto: string, data: IPostProjeto): Promise
   return false;
 }
 
-export async function getProjetos(idUser: string): Promise<IGetProjeto[]> {
+export async function getProjetos(idUser: string, params?: string): Promise<IGetProjeto[]> {
   try {
-    const responseData = await api.get<IGetProjeto[]>(`/projetos?idUser=${idUser}`).then((response) => response.data);
+    const responseData = await api.get<IGetProjeto[]>(`/projetos?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

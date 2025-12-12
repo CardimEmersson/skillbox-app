@@ -3,12 +3,17 @@ import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
 import { BadgeClose, CustomButton, HeaderList, SelectOption } from "@/components/ui";
 import { ImageUploader } from "@/components/ui/ImageUploader";
-import { CadastroUsuarioDataForm } from "@/interfaces/cadastroUsuario";
+import { AuthContext } from "@/comtexts/authContext";
+import { UsuarioSchema } from "@/data/shemas/usuarioSchema";
+import { CadastroUsuarioDataForm, IPutUsuario, TypeNivelFormacao } from "@/interfaces/cadastroUsuario";
+import { getUsuarioById, putUsuario } from "@/services/modules/usuarioService";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { yupResolver } from "@hookform/resolvers/yup";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 const optionsNivelFormacao: SelectOption[] = [
   { label: 'Fundamental', value: 'fundamental' },
@@ -38,6 +43,7 @@ const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
   email: "",
   localizacao: "",
   dataNascimento: "",
+  telefone: "",
   nivelFormacao: "fundamental",
   instituicao: "",
   objetivoProfissional: "",
@@ -52,17 +58,34 @@ const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
 
 export default function CadastroUsuario() {
   const router = useRouter();
+  const { userAuth } = useContext(AuthContext);
   const [image, setImage] = useState<string | null>("");
   const [optionsAreas, setOptionsAreas] = useState<SelectOption[]>(initialOptionsAreas);
   const [inputValueArea, setInputValueArea] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+
+  const inputSobrenomeRef = useRef<TextInput>(null);
+  const inputEmailRef = useRef<TextInput>(null);
+  const inputLocalizacaoRef = useRef<TextInput>(null);
+  const inputDataNascimentoRef = useRef<TextInput>(null);
+  const inputTelefoneRef = useRef<TextInput>(null);
+  const inputObjetivoProfissionalRef = useRef<TextInput>(null);
+  const inputLinkedinRef = useRef<TextInput>(null);
+  const inputGithubRef = useRef<TextInput>(null);
+  const inputSiteRef = useRef<TextInput>(null);
 
   const {
     control,
     watch,
     getValues,
-    setValue
+    setValue,
+    reset,
+    handleSubmit
   } = useForm<CadastroUsuarioDataForm>({
-    defaultValues: defaultValuesCadastroUsuario
+    defaultValues: defaultValuesCadastroUsuario,
+    resolver: yupResolver(UsuarioSchema) as any,
   });
 
   const areasUtilizadasNomes = useMemo(() => {
@@ -112,17 +135,130 @@ export default function CadastroUsuario() {
     });
   }
 
+  function focusInput(nameInput: string) {
+    switch (nameInput) {
+      case 'sobrenome':
+        inputSobrenomeRef?.current?.focus();
+        break;
+      case 'email':
+        inputEmailRef?.current?.focus();
+        break;
+      case 'localizacao':
+        inputLocalizacaoRef?.current?.focus();
+        break;
+      case 'dataNascimento':
+        inputDataNascimentoRef?.current?.focus();
+        break;
+      case 'telefone':
+        inputTelefoneRef?.current?.focus();
+        break;
+      case 'objetivoProfissional':
+        inputObjetivoProfissionalRef?.current?.focus();
+        break;
+      case 'linkedin':
+        inputLinkedinRef?.current?.focus();
+        break;
+      case 'github':
+        inputGithubRef?.current?.focus();
+        break;
+      case 'site':
+        inputSiteRef?.current?.focus();
+        break;
+      default:
+        break;
+    }
+  }
+
+  async function getUsuarioByIdData(idUsuario: string) {
+    setIsLoadingData(true);
+    try {
+      const result = await getUsuarioById(idUsuario);
+
+      if (result) {
+        reset({
+          ...defaultValuesCadastroUsuario,
+          nome: result.nome ?? "",
+          sobrenome: result.sobrenome ?? "",
+          dataNascimento: result.dataNascimento ?? "",
+          email: result.email ?? "",
+          telefone: result.telefone ?? "",
+          areasUtilizadas: result.areasUtilizadas ?? [],
+          bio: result.bio ?? "",
+          github: result.github ?? "",
+          imagem: result.imagem ?? "",
+          instituicao: result.instituicao ?? "",
+          linkedin: result.linkedin ?? "",
+          localizacao: result.localizacao ?? "",
+          nivelFormacao: result.nivelFormacao as TypeNivelFormacao ?? "fundamental",
+          objetivoProfissional: result.objetivoProfissional ?? "",
+          site: result.site ?? ""
+        });
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro no usuario', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  async function handleSubmitUsuario(data: CadastroUsuarioDataForm) {
+    setIsSubmitting(true);
+    try {
+
+      const putData: IPutUsuario = {
+        nome: data.nome,
+        sobrenome: data.sobrenome,
+        areasUtilizadas: [],
+        bio: data.bio,
+        dataNascimento: data.dataNascimento,
+        email: data.email,
+        github: data.github,
+        imagem: "",
+        instituicao: data.instituicao,
+        linkedin: data.linkedin,
+        localizacao: data.localizacao,
+        nivelFormacao: data.nivelFormacao,
+        objetivoProfissional: data.objetivoProfissional,
+        site: data.site,
+        telefone: data.telefone,
+        senha: userAuth?.senha ?? "",
+      };
+
+      const result = await putUsuario(userAuth?.id ?? "", putData);
+
+      if (result) {
+        Toast.show({
+          type: 'success',
+          text1: 'Sucesso!',
+          text2: `Usuario editado com sucesso!`,
+        });
+        setTimeout(() => router.push('/usuario'), 300);
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      getUsuarioByIdData(userAuth?.id ?? "");
+
+      return () => {
+        reset(defaultValuesCadastroUsuario);
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [userAuth, reset])
+  );
+
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
       >
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          contentContainerClassName="flex-grow w-full pt-10 px-8 pb-8"
-          automaticallyAdjustKeyboardInsets
-        >
+        <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
             onPressAdd={() => {
               //
@@ -133,161 +269,206 @@ export default function CadastroUsuario() {
             }}
             disabledAdd
           />
+          <ScrollView ref={scrollViewRef} className="mt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 4, paddingHorizontal: 4 }}>
+            <View className="w-full items-center mb-6 mt-6">
+              <ImageUploader image={image} setImage={setImage} />
+            </View>
 
-          <View className="w-full items-center mb-6 mt-6">
-            <ImageUploader image={image} setImage={setImage} />
-          </View>
-
-          <Text className="text-xl font-inter-bold mb-6 color-text">Informações pessoais</Text>
-          <View>
-            <ControlledInput
-              control={control}
-              label='Nome'
-              name='nome'
-              placeholder='Nome'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Sobrenome'
-              name='sobrenome'
-              placeholder='Sobrenome'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Email'
-              name='email'
-              placeholder='@email.com'
-              keyboardType='email-address'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Localização (cidade/estado)'
-              name='localizacao'
-              placeholder='Localização'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Data de nascimento'
-              name='dataNascimento'
-              placeholder='dd/mm/yyyy'
-              className='mb-4'
-              type='date'
-              returnKeyType='next'
-            />
-
-            <Text className="text-xl font-inter-bold my-6 color-text">Perfil profissional / Acadêmico</Text>
-
-            <ControlledSelect
-              control={control}
-              label='Nível de formação'
-              name='nivelFormacao'
-              placeholder='Fundamental'
-              className='mb-4'
-              returnKeyType='next'
-              options={optionsNivelFormacao}
-            />
-            <ControlledInput
-              control={control}
-              label='Instituição de ensino'
-              name='instituicao'
-              placeholder='Instituição'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Objetivo profissional'
-              name='objetivoProfissional'
-              placeholder='Objetivo profissional'
-              className='mb-4'
-              returnKeyType='next'
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-            <View className="flex flex-row items-center justify-between mb-4 w-full">
-              <ControlledAutocomplete
+            <Text className="text-xl font-inter-bold mb-6 color-text">Informações pessoais</Text>
+            <View>
+              <ControlledInput
                 control={control}
-                label='Área de interesse'
-                name='areaSelecionada'
-                placeholder='Área'
-                className='w-3/4'
-                options={optionsAreas}
-                onAddOption={handleAddNovaArea}
-                handleInputValue={setInputValueArea}
-                inputValue={inputValueArea}
+                label='Nome*'
+                name='nome'
+                placeholder='Nome'
+                className='mb-4'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('sobrenome')}
+                isLoading={isLoadingData}
               />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddArea}>
-                <Ionicons name="add-circle" size={40} color="black" />
-              </Pressable>
-            </View>
-            <View className="flex flex-row w-full flex-wrap">
-              {watch('areasUtilizadas')?.map((areaValue, index) => (
-                <BadgeClose
-                  key={`${areaValue}-${index}`}
-                  name={areasUtilizadasNomes[index]}
-                  onPress={() => {
-                    onRemoveArea(areaValue);
-                  }}
+              <ControlledInput
+                ref={inputSobrenomeRef}
+                control={control}
+                label='Sobrenome*'
+                name='sobrenome'
+                placeholder='Sobrenome'
+                className='mb-4'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('email')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputEmailRef}
+                control={control}
+                label='Email*'
+                name='email'
+                placeholder='@email.com'
+                keyboardType='email-address'
+                className='mb-4'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('localizacao')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputLocalizacaoRef}
+                control={control}
+                label='Localização (cidade/estado)'
+                name='localizacao'
+                placeholder='Localização'
+                className='mb-4'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('dataNascimento')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputDataNascimentoRef}
+                control={control}
+                label='Data de nascimento*'
+                name='dataNascimento'
+                placeholder='dd/mm/yyyy'
+                className='mb-4'
+                type='date'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('telefone')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputTelefoneRef}
+                control={control}
+                label='Telefone*'
+                name='telefone'
+                placeholder='(00) 00000-0000'
+                type='phone'
+                mask='phone'
+                className='mb-4'
+                returnKeyType='next'
+                isLoading={isLoadingData}
+              />
+
+              <Text className="text-xl font-inter-bold my-6 color-text">Perfil profissional / Acadêmico</Text>
+
+              <ControlledSelect
+                control={control}
+                label='Nível de formação'
+                name='nivelFormacao'
+                placeholder='Fundamental'
+                className='mb-4'
+                returnKeyType='next'
+                options={optionsNivelFormacao}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                control={control}
+                label='Instituição de ensino'
+                name='instituicao'
+                placeholder='Instituição'
+                className='mb-4'
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('objetivoProfissional')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputObjetivoProfissionalRef}
+                control={control}
+                label='Objetivo profissional'
+                name='objetivoProfissional'
+                placeholder='Objetivo profissional'
+                className='mb-4'
+                returnKeyType='next'
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                isLoading={isLoadingData}
+              />
+              <View className="flex flex-row items-center justify-between mb-4 w-full">
+                <ControlledAutocomplete
+                  control={control}
+                  label='Área de interesse'
+                  name='areaSelecionada'
+                  placeholder='Área'
+                  className='w-3/4'
+                  options={optionsAreas}
+                  onAddOption={handleAddNovaArea}
+                  handleInputValue={setInputValueArea}
+                  inputValue={inputValueArea}
+                  isLoading={isLoadingData}
                 />
-              ))}
+                <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddArea}>
+                  <Ionicons name="add-circle" size={40} color="black" />
+                </Pressable>
+              </View>
+              <View className="flex flex-row w-full flex-wrap">
+                {watch('areasUtilizadas')?.map((areaValue, index) => (
+                  <BadgeClose
+                    key={`${areaValue}-${index}`}
+                    name={areasUtilizadasNomes[index]}
+                    onPress={() => {
+                      onRemoveArea(areaValue);
+                    }}
+                  />
+                ))}
+              </View>
+              <ControlledInput
+                control={control}
+                label='Bio / sobre você'
+                name='bio'
+                placeholder='Bio'
+                className='mb-4'
+                returnKeyType='next'
+                multiline
+                numberOfLines={4}
+                textAlignVertical="top"
+                onSubmitEditing={() => focusInput('linkedin')}
+                isLoading={isLoadingData}
+              />
+
+              <Text className="text-xl font-inter-bold my-6 color-text">Links pessoais / portifólio</Text>
+
+              <ControlledInput
+                ref={inputLinkedinRef}
+                control={control}
+                label='Linkedin'
+                name='linkedin'
+                placeholder='https://'
+                className='mb-4'
+                keyboardType="url"
+                returnKeyType='next'
+                onSubmitEditing={() => focusInput('github')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputGithubRef}
+                control={control}
+                label='Github'
+                name='github'
+                placeholder='https://'
+                className='mb-4'
+                returnKeyType='next'
+                keyboardType="url"
+                onSubmitEditing={() => focusInput('site')}
+                isLoading={isLoadingData}
+              />
+              <ControlledInput
+                ref={inputSiteRef}
+                control={control}
+                label='Site pessoal / Portifólio'
+                name='site'
+                placeholder='https://'
+                className='mb-4'
+                returnKeyType='next'
+                keyboardType="url"
+                isLoading={isLoadingData}
+              />
+
+              <CustomButton
+                title='Salvar'
+                onPress={handleSubmit(handleSubmitUsuario)}
+                className="w-full mb-2 mt-auto"
+                isLoading={isSubmitting}
+              />
             </View>
-            <ControlledInput
-              control={control}
-              label='Bio / sobre você'
-              name='bio'
-              placeholder='Bio'
-              className='mb-4'
-              returnKeyType='next'
-              multiline
-              numberOfLines={4}
-              textAlignVertical="top"
-            />
-
-            <Text className="text-xl font-inter-bold my-6 color-text">Links pessoais / portifólio</Text>
-
-            <ControlledInput
-              control={control}
-              label='Linkedin'
-              name='linkedin'
-              placeholder='https://'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Github'
-              name='github'
-              placeholder='https://'
-              className='mb-4'
-              returnKeyType='next'
-            />
-            <ControlledInput
-              control={control}
-              label='Site pessoal / Portifólio'
-              name='site'
-              placeholder='https://'
-              className='mb-4'
-              returnKeyType='next'
-            />
-
-            <CustomButton
-              title='Salvar'
-              onPress={() => {
-                //
-              }}
-              className="w-full mb-2 mt-auto"
-            />
-          </View>
-        </ScrollView>
+          </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )

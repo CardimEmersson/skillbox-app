@@ -1,19 +1,106 @@
 import { ListCardPerfil } from "@/components/Cursos/ListCardPerfil";
+import { ListCardPerfilSkeleton } from "@/components/Cursos/ListCardPerfilSkeleton";
+import { ListCardPreview } from "@/components/Metas/ListCardPreview";
 import { ListCardProjetoPerfil } from "@/components/Projetos/ListCardProjetoPerfil";
+import { ListCardProjetoPerfilSkeleton } from "@/components/Projetos/ListCardProjetoPerfilSkeleton";
 import { ConfirmationModal, CustomButton } from "@/components/ui";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUploader } from "@/components/ui/ImageUploader";
-import { SkillboxItem } from "@/components/ui/SkillboxItem";
+import { SkillboxItem, SkillboxItemSkeleton, TypeColorsSkillbox } from "@/components/ui/SkillboxItem";
+import { PerfilCompartilhavel } from "@/components/Usuarios/PerfilCompartilhavel";
+import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
+import { IGetCurso } from "@/interfaces/cadastroCurso";
+import { IGetHabilidade } from "@/interfaces/cadastroHabilidade";
+import { IGetMeta } from "@/interfaces/cadastroMeta";
+import { IGetProjeto } from "@/interfaces/cadastroProjeto";
+import { getCursos } from "@/services/modules/cursoService";
+import { getHabilidades } from "@/services/modules/habilidadeService";
+import { getMetas } from "@/services/modules/metaService";
+import { getProjetos } from "@/services/modules/projetoService";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useFocusEffect, useRouter } from "expo-router";
+import * as Sharing from 'expo-sharing';
+import { useCallback, useContext, useMemo, useRef, useState } from "react";
 import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import Toast from "react-native-toast-message";
+import ViewShot from "react-native-view-shot";
 
+export const colorsSkillbox: TypeColorsSkillbox[] = ["green", "orange", "blue", "pink", "primary", "purple", "red"];
 
 export default function Usuario() {
   const router = useRouter();
-  const [image, setImage] = useState<string | null>("");
+  const { userAuth } = useContext(AuthContext);
+  const [image, setImage] = useState<string | null>(userAuth?.imagem ?? "");
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const [cursos, setCursos] = useState<IGetCurso[]>([]);
+  const [projetos, setProjetos] = useState<IGetProjeto[]>([]);
+  const [habilidades, setHabilidades] = useState<IGetHabilidade[]>([]);
+  const [metas, setMetas] = useState<IGetMeta[]>([]);
+  const viewShotRef = useRef<ViewShot>(null);
+  const [showAllHabilidades, setShowAllHabilidades] = useState(false);
+  const [showAllCursos] = useState(false);
+  const [showAllProjetos] = useState(false);
+  const [showAllMetas] = useState(false);
+
+  async function getInfoData(idUsuario: string) {
+    setIsLoadingData(true);
+    try {
+      const params = "&_page=1&_limit=10";
+
+      const [cursosData, projetosData, habilidadesData, metasData] = await Promise.all([getCursos(idUsuario, params), getProjetos(idUsuario, params), getHabilidades(idUsuario, ""), getMetas(idUsuario, params)]);
+
+      setCursos(cursosData ?? []);
+      setProjetos(projetosData ?? []);
+      setHabilidades(habilidadesData ?? []);
+      setMetas(metasData ?? []);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na busca das informações', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  async function handleShare() {
+    try {
+      if (viewShotRef.current?.capture) {
+        const localUri = await viewShotRef.current.capture();
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(localUri);
+        }
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro ao compartilhar', text2: error?.message ?? "Não foi possível compartilhar o perfil." });
+    }
+  }
+
+  const displayedHabilidades = useMemo(() => {
+    return showAllHabilidades ? habilidades : (habilidades ?? []).slice(0, 6);
+  }, [showAllHabilidades, habilidades]);
+
+  const displayedCursos = useMemo(() => {
+    return showAllCursos ? cursos : (cursos ?? []).slice(0, 3);
+  }, [showAllCursos, cursos]);
+
+  const displayedProjetos = useMemo(() => {
+    return showAllProjetos ? projetos : (projetos ?? []).slice(0, 3);
+  }, [showAllProjetos, projetos]);
+
+  const displayedMetas = useMemo(() => {
+    return showAllMetas ? metas : (metas ?? []).slice(0, 4);
+  }, [showAllMetas, metas]);
+
+  useFocusEffect(
+    useCallback(() => {
+      getInfoData(userAuth?.id ?? "");
+
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [userAuth])
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -21,6 +108,7 @@ export default function Usuario() {
         showsVerticalScrollIndicator={false}
         contentContainerClassName="flex-grow w-full flex pt-10 px-8 pb-8 mt-2"
         automaticallyAdjustKeyboardInsets
+        ref={scrollViewRef}
       >
         <View className="flex items-center ">
           <View className="w-full flex flex-row justify-between">
@@ -37,8 +125,8 @@ export default function Usuario() {
             </Pressable>
           </View>
           <ImageUploader image={image} setImage={setImage} disabled />
-          <Text className="text-2xl font-inter-bold">Usuario</Text>
-          <Text className="text-xl font-inter-light text-center">Apaixonado por resolver problemas com código e café ☕</Text>
+          <Text className="text-2xl font-inter-bold">{userAuth?.nome ?? ""}</Text>
+          <Text className="text-xl font-inter-light text-center">{userAuth?.bio ?? ""}</Text>
         </View>
 
         <View className="w-full flex flex-row justify-between mt-10">
@@ -51,9 +139,7 @@ export default function Usuario() {
           />
           <CustomButton
             title='Compartilhar'
-            onPress={() => {
-              //
-            }}
+            onPress={handleShare}
             className="flex-1 mt-auto"
             colors={[...Colors.greenGradient] as [string, string, ...string[]]}
           />
@@ -62,66 +148,131 @@ export default function Usuario() {
         <Text className="text-3xl font-inter-bold my-8">Skillbox</Text>
 
         <View className="w-full flex flex-row flex-wrap justify-between mb-4">
-          <SkillboxItem
-            title="Hard skill"
-            value="Python"
-            bgColor="green"
-          />
-          <SkillboxItem
-            title="Hard skill"
-            value="Python"
-            bgColor="green"
-          />
-          <SkillboxItem
-            title="Hard skill"
-            value="Python"
-            bgColor="green"
-          />
-          <SkillboxItem
-            title="Hard skill"
-            value="Python"
-            bgColor="green"
-          />
+          {isLoadingData ? (
+            <>
+              <SkillboxItemSkeleton />
+              <SkillboxItemSkeleton />
+              <SkillboxItemSkeleton />
+              <SkillboxItemSkeleton />
+              <SkillboxItemSkeleton />
+              <SkillboxItemSkeleton />
+            </>
+          ) : (
+            displayedHabilidades.map((item, index) => (
+              <SkillboxItem
+                key={item.id}
+                title={item.proficiencia}
+                value={item.nome}
+                bgColor={colorsSkillbox[index % colorsSkillbox.length]}
+              />
+            ))
+          )}
+
+          {!isLoadingData && habilidades.length === 0 && (
+            <EmptyState
+              icon="ribbon-outline"
+              title="Nenhuma habilidade cadastrada"
+              message="Você ainda não adicionou nenhuma habilidade"
+            />
+          )}
         </View>
+        {habilidades.length > 6 && (
+          <View className="w-full">
+            <CustomButton
+              title={showAllHabilidades ? 'Esconder habilidades' : 'Carregar mais'}
+              onPress={() => {
+                setShowAllHabilidades(!showAllHabilidades);
+              }}
+              className="flex-1"
+              variant="outlined"
+            />
+          </View>
+        )}
 
         <View className="flex flex-row w-full">
           <View className="flex flex-1 mr-2">
             <Text className="text-3xl font-inter-bold">Cursos</Text>
 
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
-            <ListCardPerfil institution="Alura"
-              name="Curso de python as saasdas asd asd" />
+            {isLoadingData ? (
+              <>
+                <ListCardPerfilSkeleton />
+                <ListCardPerfilSkeleton />
 
+                <ListCardPerfilSkeleton />
+                <ListCardPerfilSkeleton />
+              </>
+            ) : (
+              displayedCursos.map((item) => (
+                <ListCardPerfil key={item.id} institution={item.plataformaInstituicao}
+                  name={item.nome} />
+              ))
+            )}
+
+            {!isLoadingData && cursos.length === 0 && (
+              <EmptyState
+                icon="school-outline"
+                title="Nenhum curso cadastrado"
+                message="Você ainda não adicionou nenhum curso."
+              />
+            )}
           </View>
           <View className="flex flex-1">
             <Text className="text-3xl font-inter-bold">Projetos</Text>
 
-            <ListCardProjetoPerfil
-              image="https://picsum.photos/seed/react/600/400"
-              title="Dashboard de vendas"
-              skills={["python", "UI design"]}
-            />
-            <ListCardProjetoPerfil
-              image="https://picsum.photos/seed/react/600/400"
-              title="Dashboard de vendas"
-              skills={["python", "UI design"]}
-            />
-            <ListCardProjetoPerfil
-              image="https://picsum.photos/seed/react/600/400"
-              title="Dashboard de vendas"
-              skills={["python", "UI design"]}
-            />
-          </View>
+            {isLoadingData ? (
+              <>
+                <ListCardProjetoPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
 
+                <ListCardProjetoPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
+              </>
+            ) : (
+              displayedProjetos.map((item) => (
+                <ListCardProjetoPerfil
+                  key={item.id}
+                  image={item.imagens[0] ?? ""}
+                  title={item.nome}
+                  skills={item.habilidadesUtilizadas?.map((item) => item.nome)}
+                />
+              ))
+            )}
+
+            {!isLoadingData && projetos.length === 0 && (
+              <EmptyState
+                icon="briefcase-outline"
+                title="Nenhum projeto cadastrado"
+                message="Você ainda não adicionou nenhum projeto"
+              />
+            )}
+          </View>
+        </View>
+        <View className="flex w-full">
+          <Text className="text-3xl font-inter-bold">Metas</Text>
+
+          <View className="w-full flex flex-row flex-wrap justify-between">
+            {isLoadingData ? (
+              <>
+                <ListCardPerfilSkeleton />
+                <ListCardPerfilSkeleton />
+
+                <ListCardPerfilSkeleton />
+                <ListCardPerfilSkeleton />
+              </>
+            ) : (
+              displayedMetas.map((item) => (
+                <ListCardPreview key={item.id} name={item.titulo} />
+              ))
+            )}
+
+            {!isLoadingData && metas.length === 0 && (
+              <EmptyState
+                icon="trophy-outline"
+                title="Nenhuma meta cadastrada"
+                message="Você ainda não adicionou nenhuma meta"
+              />
+            )}
+          </View>
         </View>
 
       </ScrollView>
@@ -136,6 +287,15 @@ export default function Usuario() {
         message="Tem certeza de que deseja sair?"
         confirmButtonText="Sim, Sair"
       />
+      <View style={{ position: 'absolute', left: -10000 }}>
+        <ViewShot ref={viewShotRef} options={{ fileName: "meu-perfil-skillbox", format: "jpg", quality: 0.9 }}>
+          <PerfilCompartilhavel
+            userAuth={userAuth}
+            habilidades={habilidades}
+            cursos={cursos}
+            projetos={projetos} />
+        </ViewShot>
+      </View>
     </SafeAreaView>
   )
 }
