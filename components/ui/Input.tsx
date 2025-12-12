@@ -21,9 +21,10 @@ export type InputProps = React.ComponentProps<typeof TextInput> & {
   type?: 'password' | 'text' | 'date' | 'phone';
   mask?: MaskType;
   error?: string;
+  minimumDate?: Date;
 };
 
-export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChangeText, rightIcon, isLoading, editable = true, type = 'text', mask, error, ...props }, ref) => {
+export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChangeText, rightIcon, isLoading, editable = true, type = 'text', mask, error, minimumDate, ...props }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -117,8 +118,8 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
       <Pressable onPress={handlePress} disabled={isDisabled}>
         <View style={[
           { backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor },
-          styles.inputContainer,
-          { borderColor: error ? '#EF4444' : 'transparent', borderWidth: 1 }
+          !isDisabled && styles.inputContainer,
+          { borderColor: error ? '#EF4444' : (isDisabled ? 'transparent' : '#0000001A'), borderWidth: 1 }
         ]} className={`rounded-lg justify-center ${props.multiline ? 'h-auto' : 'min-h-[58px]'}`}>
           <Animated.Text style={[labelStyle, { color: isDisabled ? disabledTextColor : labelStyle.color }]} className='absolute left-4'>
             {label}
@@ -170,6 +171,7 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
           mode="date"
           display="default"
           onChange={onDateChange}
+          minimumDate={minimumDate}
         />
       )}
       {error && <Text className="text-red-500 text-sm mt-1 ml-1">{error}</Text>}

@@ -1,3 +1,4 @@
+import { ControlledAutocomplete } from "@/components/ControlledAutocomplete";
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
 import { BadgeClose, CustomButton, HeaderList, SelectOption } from "@/components/ui";
@@ -5,7 +6,7 @@ import { ImageUploader } from "@/components/ui/ImageUploader";
 import { CadastroUsuarioDataForm } from "@/interfaces/cadastroUsuario";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 
@@ -17,6 +18,18 @@ const optionsNivelFormacao: SelectOption[] = [
   { label: 'Pós graduação', value: 'pos_graduacao' },
   { label: 'Mestrado', value: 'mestrado' },
   { label: 'Doutorado', value: 'doutorado' },
+];
+
+const initialOptionsAreas: SelectOption[] = [
+  { label: 'Tecnologia', value: 'tecnologia' },
+  { label: 'Saúde', value: 'saude' },
+  { label: 'Engenharia', value: 'engenharia' },
+  { label: 'Direito', value: 'direito' },
+  { label: 'Educação', value: 'educacao' },
+  { label: 'Design', value: 'design' },
+  { label: 'Comunicação', value: 'comunicacao' },
+  { label: 'Finanças', value: 'financas' },
+  { label: 'Artes', value: 'artes' },
 ];
 
 const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
@@ -40,6 +53,8 @@ const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
 export default function CadastroUsuario() {
   const router = useRouter();
   const [image, setImage] = useState<string | null>("");
+  const [optionsAreas, setOptionsAreas] = useState<SelectOption[]>(initialOptionsAreas);
+  const [inputValueArea, setInputValueArea] = useState('');
 
   const {
     control,
@@ -50,9 +65,29 @@ export default function CadastroUsuario() {
     defaultValues: defaultValuesCadastroUsuario
   });
 
+  const areasUtilizadasNomes = useMemo(() => {
+    return getValues().areasUtilizadas.map(areaValue => {
+      const foundArea = optionsAreas.find(option => option.value === areaValue);
+      return foundArea ? foundArea.label : '';
+    }).filter(Boolean);
+  }, [watch('areasUtilizadas'), optionsAreas]);
+
+  function handleAddNovaArea(novaArea: string) {
+    const findedArea = optionsAreas?.find((area) => area.label.toLowerCase() === novaArea.toLowerCase())
+    if (findedArea) return findedArea;
+
+    const novaOpcao: SelectOption = {
+      label: novaArea,
+      value: novaArea.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
+    };
+
+    setOptionsAreas(prev => [...prev, novaOpcao]);
+    return novaOpcao;
+  }
+
   function onAddArea() {
     if (watch().areaSelecionada) {
-      const areaSelecionada: number = getValues().areaSelecionada ?? 0;
+      const areaSelecionada: string = getValues().areaSelecionada ?? "";
       const findedArea = getValues().areasUtilizadas.find((categoria) => categoria === watch().areaSelecionada);
 
       if (!findedArea) {
@@ -61,6 +96,7 @@ export default function CadastroUsuario() {
           shouldValidate: true,
         });
       }
+      setInputValueArea('');
     }
     setValue("areaSelecionada", undefined, {
       shouldDirty: true,
@@ -68,7 +104,7 @@ export default function CadastroUsuario() {
     });
   }
 
-  function onRemoveArea(area: number) {
+  function onRemoveArea(area: string) {
     const filteredAreas = getValues().areasUtilizadas.filter((item) => item !== area);
     setValue("areasUtilizadas", filteredAreas, {
       shouldDirty: true,
@@ -121,7 +157,6 @@ export default function CadastroUsuario() {
               returnKeyType='next'
             />
             <ControlledInput
-              // ref={inputEmailRef}
               control={control}
               label='Email'
               name='email'
@@ -129,7 +164,6 @@ export default function CadastroUsuario() {
               keyboardType='email-address'
               className='mb-4'
               returnKeyType='next'
-            // onSubmitEditing={() => focusInput('dataNascimento')}
             />
             <ControlledInput
               control={control}
@@ -180,26 +214,28 @@ export default function CadastroUsuario() {
               textAlignVertical="top"
             />
             <View className="flex flex-row items-center justify-between mb-4 w-full">
-              <ControlledSelect
+              <ControlledAutocomplete
                 control={control}
                 label='Área de interesse'
                 name='areaSelecionada'
                 placeholder='Área'
                 className='w-3/4'
-                options={[]}
+                options={optionsAreas}
+                onAddOption={handleAddNovaArea}
+                handleInputValue={setInputValueArea}
+                inputValue={inputValueArea}
               />
               <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddArea}>
                 <Ionicons name="add-circle" size={40} color="black" />
               </Pressable>
             </View>
             <View className="flex flex-row w-full flex-wrap">
-              {getValues().areasUtilizadas?.map((area, index) => (
+              {watch('areasUtilizadas')?.map((areaValue, index) => (
                 <BadgeClose
-                  key={index}
-                  // name={optionsCategorias?.find((option) => option.value === categoria)?.label ?? ''}
-                  name=""
+                  key={`${areaValue}-${index}`}
+                  name={areasUtilizadasNomes[index]}
                   onPress={() => {
-                    onRemoveArea(area);
+                    onRemoveArea(areaValue);
                   }}
                 />
               ))}

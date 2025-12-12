@@ -21,7 +21,7 @@ export function ActionModal({ isVisible, onClose }: ActionModalProps) {
     >
       <View className="flex-1 justify-center items-center">
         <View style={styles.modalView} className="w-80 bg-white rounded-2xl py-9 px-7 items-center">
-          <ThemedText type="subtitle" className="mb-5">Adicionar</ThemedText>
+          <ThemedText type="subtitle" className="mb-5">Navegar</ThemedText>
           <CustomButton
             title="Habilidade"
             onPress={() => {

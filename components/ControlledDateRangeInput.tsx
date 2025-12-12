@@ -16,7 +16,7 @@ export const ControlledDateRangeInput = forwardRef<TextInput, ControlledDateRang
     <Controller
       control={control}
       name={name}
-      render={({ field: { onChange, value: controlledValue } }) => (
+      render={({ field: { onChange, value: controlledValue }, fieldState: { error } }) => (
         <DateRangeInput
           ref={ref}
           {...props}
@@ -27,6 +27,7 @@ export const ControlledDateRangeInput = forwardRef<TextInput, ControlledDateRang
             onChange(text);
             props?.onChangeText?.(text);
           }}
+          error={error?.message}
         />
       )}
     />

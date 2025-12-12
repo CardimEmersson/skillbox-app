@@ -8,13 +8,15 @@ import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
 import { HabilidadeSchema } from "@/data/shemas/habilidadeSchema";
 import { CadastroHabilidadeDataForm, IPostHabilidade } from "@/interfaces/cadastroHabilidade";
-import { deleteHabilidade, getCategorias, getHabilidadeById, postCategoria, postHabilidade } from "@/services/modules/habilidadeService";
+import { getCursos } from "@/services/modules/cursoService";
+import { deleteHabilidade, getCategorias, getHabilidadeById, postCategoria, postHabilidade, putHabilidade } from "@/services/modules/habilidadeService";
+import { getProjetos } from "@/services/modules/projetoService";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useContext, useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, View } from "react-native";
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 export type SelectionOptionCursoProjeto = {
@@ -26,13 +28,6 @@ const optionsProficiencia: SelectOption[] = [
   { label: 'Iniciante', value: 'iniciante' },
   { label: 'Intermediario', value: 'intermediario' },
   { label: 'Avançado', value: 'avancado' },
-];
-
-const optionsCursosProjetos: SelectionOptionCursoProjeto[] = [
-  { label: 'Curso 01', value: 1, tipo: 'curso' },
-  { label: 'Projeto 01', value: 2, tipo: 'projeto' },
-  { label: 'Curso 02', value: 3, tipo: 'curso' },
-  { label: 'Projeto 02', value: 4, tipo: 'projeto' },
 ];
 
 const defaultValuesCadatroHabilidade: CadastroHabilidadeDataForm = {
@@ -57,6 +52,8 @@ export default function CadastroHabilidade() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isLoadingCategorias, setIsLoadingCategorias] = useState(false);
+  const [optionsCursosProjetos, setOptionsCursosProjetos] = useState<SelectionOptionCursoProjeto[]>([]);
+  const [isLoadingCursosProjetos, setIsLoadingCursosProjetos] = useState(false);
 
   const {
     control,
@@ -191,21 +188,28 @@ export default function CadastroHabilidade() {
         categorias: categoriasHabilidade,
         nome: data.nome,
         proficiencia: data.proficiencia,
-        cursosProjetos: [],
+        cursosProjetos: data.cursosProjetos,
         idUser: userAuth?.id ?? "",
       }
 
-      const result = await postHabilidade(postData);
+      let result;
+
+      if (params.id) {
+        result = await putHabilidade(params.id, postData);
+      } else {
+        result = await postHabilidade(postData);
+      }
 
       if (result) {
         Toast.show({
           type: 'success',
           text1: 'Sucesso!',
-          text2: 'Habilidade criada com sucesso!',
+          text2: `Habilidade ${params?.id ? 'editada' : 'criada'} com sucesso!`,
         });
-        router.push('/minhasHabilidades');
+        setTimeout(() => router.push('/minhasHabilidades'), 300);
       }
     } catch (error: any) {
+      console.log("error", error);
       Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
       setIsSubmitting(false);
@@ -222,7 +226,7 @@ export default function CadastroHabilidade() {
         text1: 'Sucesso!',
         text2: 'Habilidade excluída com sucesso!',
       });
-      router.push('/minhasHabilidades');
+      setTimeout(() => router.push('/minhasHabilidades'), 300);
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro ao excluir', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
@@ -254,14 +258,42 @@ export default function CadastroHabilidade() {
     }
   }
 
+  async function getCursosProjetosData() {
+    setIsLoadingCursosProjetos(true);
+    try {
+      const [cursos, projetos] = await Promise.all([getCursos(userAuth?.id ?? ""), getProjetos(userAuth?.id ?? "")]);
+
+      const optionsCursos: SelectionOptionCursoProjeto[] = cursos?.map((item) => {
+        return {
+          label: item.nome,
+          value: item.id,
+          tipo: 'curso',
+        }
+      }) ?? [];
+      const optionsProjetos: SelectionOptionCursoProjeto[] = projetos?.map((item) => {
+        return {
+          label: item.nome,
+          value: item.id,
+          tipo: 'projeto',
+        }
+      }) ?? [];
+
+      setOptionsCursosProjetos([...optionsCursos, ...optionsProjetos]);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na curso', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingCursosProjetos(false);
+    }
+  }
+
   async function getHabilidadeByIdData(idHabilidade: string) {
     setIsLoadingData(true);
-    try { 
+    try {
       const result = await getHabilidadeById(idHabilidade);
       if (result) {
         reset({
           categorias: result.categorias,
-          cursosProjetos: [],
+          cursosProjetos: result.cursosProjetos,
           icone: "",
           nome: result.nome,
           proficiencia: result.proficiencia,
@@ -278,6 +310,7 @@ export default function CadastroHabilidade() {
     useCallback(() => {
 
       getCategoriasData();
+      getCursosProjetosData();
 
       params.id && getHabilidadeByIdData(params.id);
 
@@ -308,87 +341,97 @@ export default function CadastroHabilidade() {
               setIsDeleteModalVisible(true);
             }}
           />
+          <FlatList
+            data={[]}
+            renderItem={null}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+            ListHeaderComponent={
+              <>
+                <View className="w-full items-center mb-6 mt-6">
+                  <ImageUploader image={image} setImage={setImage} />
+                  <Text className='font-inter-semibold text-md text-start mr-2'>Icone</Text>
+                </View>
 
-          <View className="w-full items-center mb-6 mt-6">
-            <ImageUploader image={image} setImage={setImage} />
-            <Text className='font-inter-semibold text-md text-start mr-2'>Icone</Text>
-          </View>
+                <View>
+                  <ControlledInput
+                    control={control}
+                    label='Nome da habilidade*'
+                    name='nome'
+                    placeholder='Nome'
+                    className='mb-4'
+                    returnKeyType='next'
+                    isLoading={isLoadingData}
+                  />
+                  <ControlledSelect
+                    control={control}
+                    label='Nível de proficiência*'
+                    name='proficiencia'
+                    placeholder='Iniciante'
+                    className='mb-4'
+                    returnKeyType='next'
+                    options={optionsProficiencia}
+                    isLoading={isLoadingData}
+                  />
+                  <View className="flex flex-row items-center justify-between mb-4 w-full">
+                    <ControlledAutocomplete
+                      control={control}
+                      label='Categoria'
+                      name='categoriaSelecionada'
+                      placeholder='Categoria'
+                      className='w-3/4'
+                      options={optionsCategorias}
+                      onAddOption={handleAddNovaCategoria}
+                      handleInputValue={handleInputValueCategoria}
+                      inputValue={inputValueCategoria}
+                      isLoading={isLoadingCategorias || isLoadingData}
+                    />
+                    <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCategoria}>
+                      <Ionicons name="add-circle" size={40} color="black" />
+                    </Pressable>
+                  </View>
+                  <View className="flex flex-row w-full flex-wrap">
+                    {getValues().categorias?.map((categoria, index) => (
+                      <BadgeClose
+                        key={index}
+                        name={optionsCategorias?.find((option) => option.value === categoria)?.label ?? ''}
+                        onPress={() => {
+                          onRemoveCategoria(categoria);
+                        }}
+                      />
+                    ))}
+                  </View>
 
-          <View>
-            <ControlledInput
-              control={control}
-              label='Nome da habilidade'
-              name='nome'
-              placeholder='Nome'
-              className='mb-4'
-              returnKeyType='next'
-              isLoading={isLoadingData}
-            />
-            <ControlledSelect
-              control={control}
-              label='Nível de proficiência'
-              name='proficiencia'
-              placeholder='Iniciante'
-              className='mb-4'
-              returnKeyType='next'
-              options={optionsProficiencia}
-              isLoading={isLoadingData}
-            />
-            <View className="flex flex-row items-center justify-between mb-4 w-full">
-              <ControlledAutocomplete
-                control={control}
-                label='Categoria'
-                name='categoriaSelecionada'
-                placeholder='Categoria'
-                className='w-3/4'
-                options={optionsCategorias}
-                onAddOption={handleAddNovaCategoria}
-                handleInputValue={handleInputValueCategoria}
-                inputValue={inputValueCategoria}
-                isLoading={isLoadingCategorias || isLoadingData}
-              />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCategoria}>
-                <Ionicons name="add-circle" size={40} color="black" />
-              </Pressable>
-            </View>
-            <View className="flex flex-row w-full flex-wrap">
-              {getValues().categorias?.map((categoria, index) => (
-                <BadgeClose
-                  key={index}
-                  name={optionsCategorias?.find((option) => option.value === categoria)?.label ?? ''}
-                  onPress={() => {
-                    onRemoveCategoria(categoria);
-                  }}
-                />
-              ))}
-            </View>
-
-            <View className="flex flex-row items-center justify-between mb-4">
-              <ControlledSelect
-                control={control}
-                label='Adicionar curso ou projeto'
-                name='cursoProjetoSelecionado'
-                placeholder='Curso ou projeto'
-                className='w-3/4'
-                options={optionsCursosProjetos}
-              />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCursosProjetos}>
-                <Ionicons name="add-circle" size={40} color="black" />
-              </Pressable>
-            </View>
-            <View className="flex flex-row w-full flex-wrap">
-              {getValues().cursosProjetos?.map((cursoProjeto, index) => (
-                <BadgetCloseGradient
-                  key={index}
-                  name={cursoProjeto.descricao}
-                  onPress={() => {
-                    onRemoveCursosProjetos(cursoProjeto.id);
-                  }}
-                  colors={cursoProjeto.tipo === 'curso' ? [...Colors.orangeGradient] as [string, string, ...string[]] : [...Colors.blueGradient] as [string, string, ...string[]]}
-                />
-              ))}
-            </View>
-          </View>
+                  <View className="flex flex-row items-center justify-between mb-4">
+                    <ControlledSelect
+                      control={control}
+                      label='Adicionar curso ou projeto'
+                      name='cursoProjetoSelecionado'
+                      placeholder='Curso ou projeto'
+                      className='w-3/4'
+                      options={optionsCursosProjetos}
+                      isLoading={isLoadingCursosProjetos || isLoadingData}
+                    />
+                    <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCursosProjetos}>
+                      <Ionicons name="add-circle" size={40} color="black" />
+                    </Pressable>
+                  </View>
+                  <View className="flex flex-row w-full flex-wrap">
+                    {getValues().cursosProjetos?.map((cursoProjeto, index) => (
+                      <BadgetCloseGradient
+                        key={index}
+                        name={cursoProjeto.descricao}
+                        onPress={() => {
+                          onRemoveCursosProjetos(cursoProjeto.id);
+                        }}
+                        colors={cursoProjeto.tipo === 'curso' ? [...Colors.orangeGradient] as [string, string, ...string[]] : [...Colors.blueGradient] as [string, string, ...string[]]}
+                      />
+                    ))}
+                  </View>
+                </View>
+              </>
+            }
+          />
           <CustomButton
             title='Salvar'
             onPress={handleSubmit(handleSubmitHabilidade)}
@@ -406,7 +449,6 @@ export default function CadastroHabilidade() {
         confirmButtonText="Sim, Excluir"
         isConfirming={isSubmitting}
       />
-      <Toast />
     </SafeAreaView>
   )
 }

@@ -1,45 +1,76 @@
 import { ListCard } from "@/components/Metas/ListCard";
+import { ListCardSkeleton } from "@/components/MinhasHabilidades/ListCard.skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeaderList } from "@/components/ui/HeaderList";
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { AuthContext } from "@/comtexts/authContext";
+import { getMetas } from "@/services/modules/metaService";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useContext, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 interface IMetaListItem {
-  id: number;
+  id: string;
   name: string;
   subtitle: string;
+  percentual: number;
 }
 
-const mockMetas: IMetaListItem[] = [
-  {
-    id: 1,
-    name: 'Meta 1',
-    subtitle: 'Até 30 de setembro'
-  },
-  {
-    id: 2,
-    name: 'Meta 2',
-    subtitle: 'Concluido'
-  },
-  {
-    id: 3,
-    name: 'Meta 3',
-    subtitle: 'Em aberto'
-  },
-];
+function formatPrazoConclusao(prazo: string, status: string): string {
+  try {
+    const [day, month, year] = prazo.split('/').map(Number);
+    const date = new Date(year, month - 1, day);
+
+    const formattedDate = new Intl.DateTimeFormat('pt-BR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+
+    return status === 'concluído' ? `Concluído em ${formattedDate}` : `Até ${formattedDate}`;
+  } catch (error) {
+    return prazo;
+  }
+}
 
 export default function Metas() {
   const router = useRouter();
+  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [metas, setMetas] = useState<IMetaListItem[]>(mockMetas);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [metas, setMetas] = useState<IMetaListItem[]>([]);
 
-  const handleRefresh = useCallback(() => {
+  async function getMetasData() {
+    setIsLoadingData(true);
+    try {
+      const result = await getMetas(userAuth?.id ?? "");
+
+      const formatedItems: IMetaListItem[] = result?.map((item) => {
+        return {
+          id: item.id,
+          subtitle: formatPrazoConclusao(item.prazoConclusao, item.status),
+          name: item.titulo,
+          percentual: item.status === 'concluído' ? 100 : item.status === 'em andamento' ? 50 : 10,
+        }
+      }) ?? [];
+
+      setMetas(formatedItems);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro na meta', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 2000);
+    await getMetasData();
+    setIsRefreshing(false);
   }, []);
+
+  useFocusEffect(useCallback(() => {
+    getMetasData();
+  }, []));
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -50,16 +81,26 @@ export default function Metas() {
           }}
           title="Metas"
         />
-        <FlatList
+        {isLoadingData ? (
+          <>
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+          </>
+        ) : <FlatList
           data={metas}
           keyExtractor={(item) => item.id?.toString()}
           renderItem={({ item }) => (
             <ListCard
               name={item.name}
               subtitle={item.subtitle}
-              percentual={50}
+              percentual={item.percentual}
               onPress={() => {
-                //
+                router.push({
+                  pathname: '/cadastroMeta',
+                  params: { id: item.id },
+                });
               }}
             />
           )}
@@ -75,6 +116,7 @@ export default function Metas() {
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
         />
+        }
       </View>
     </SafeAreaView>
   )

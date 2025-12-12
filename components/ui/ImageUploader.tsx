@@ -1,7 +1,7 @@
 
 import { sizes } from '@/constants/Sizes';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useEffect } from 'react';
 import { Alert, Image, Pressable, StyleSheet } from 'react-native';
@@ -44,7 +44,7 @@ export function ImageUploader({ image, setImage, disabled }: ImageUploaderProps)
       {image ? (
         <Image source={{ uri: image }} style={styles.image} />
       ) : (
-        <AntDesign name="plus" size={sizes.icons.lg} color={color} />
+        disabled ? <Feather name="user" size={sizes.icons.lg} color={color} /> : <AntDesign name="plus" size={sizes.icons.lg} color={color} />
       )}
     </Pressable>
   );

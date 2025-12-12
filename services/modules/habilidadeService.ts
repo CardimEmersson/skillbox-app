@@ -13,6 +13,18 @@ export async function postHabilidade(data: IPostHabilidade): Promise<boolean> {
   return false;
 }
 
+export async function putHabilidade(idHabilidade: string, data: IPostHabilidade): Promise<boolean> {
+  if (!idHabilidade) throw new Error("Id da habilidade não informado");
+  try {
+    const responseData = await api.put<string>(`/habilidades/${idHabilidade}`, data).then((response) => response.data);
+
+    return Boolean(responseData);
+  } catch (error: any) {
+    getErrorsByApi(error, "Não foi possivél editar a habilidade! Tente mais tarde");
+  }
+  return false;
+}
+
 export async function getHabilidades(idUser: string): Promise<IGetHabilidade[]> {
   try {
     const responseData = await api.get<IGetHabilidade[]>(`/habilidades?idUser=${idUser}`).then((response) => response.data);

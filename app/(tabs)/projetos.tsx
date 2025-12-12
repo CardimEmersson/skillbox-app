@@ -1,49 +1,59 @@
+import { ListCardSkeleton } from "@/components/MinhasHabilidades/ListCard.skeleton";
 import { ListCard } from "@/components/Projetos/ListCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeaderList } from "@/components/ui/HeaderList";
-import { useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { AuthContext } from "@/comtexts/authContext";
+import { getProjetos } from "@/services/modules/projetoService";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useContext, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import Toast from "react-native-toast-message";
 
 interface IProjetoListItem {
-  id: number;
+  id: string;
   name: string;
   description: string;
   habilidades: string[];
 }
 
-const mockProjetos: IProjetoListItem[] = [
-  {
-    id: 1,
-    name: 'Projeto 1',
-    description: 'Desenvolvi um app de controle financeiro pessoal com foco em simplicidade e visualização clara dos gastos.',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
-  },
-  {
-    id: 2,
-    name: 'Projeto 2',
-    description: 'Descrição do projeto 2',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
-  },
-  {
-    id: 3,
-    name: 'Projeto 3',
-    description: 'Descrição do projeto 3',
-    habilidades: ["Lógica de programação", "UI Design", "Python"]
-  },
-];
-
 export default function Projetos() {
   const router = useRouter();
+  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [projetos, setProjetos] = useState<IProjetoListItem[]>(mockProjetos);
+  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [projetos, setProjetos] = useState<IProjetoListItem[]>([]);
 
-  const handleRefresh = useCallback(() => {
+  async function getProjetosData() {
+    setIsLoadingData(true);
+    try {
+      const result = await getProjetos(userAuth?.id ?? "");
+
+      const formatedItems: IProjetoListItem[] = result?.map((item) => {
+        return {
+          id: item.id,
+          name: item.nome,
+          description: item.descricao,
+          habilidades: item.habilidadesUtilizadas?.map((item) => item.nome) ?? []
+        }
+      }) ?? [];
+
+      setProjetos(formatedItems);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+    } finally {
+      setIsLoadingData(false);
+    }
+  }
+
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setIsRefreshing(false);
-    }, 2000);
+    await getProjetosData();
+    setIsRefreshing(false);
   }, []);
+
+  useFocusEffect(useCallback(() => {
+    getProjetosData();
+  }, []));
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -54,7 +64,14 @@ export default function Projetos() {
           }}
           title="Projetos"
         />
-        <FlatList
+        {isLoadingData ? (
+          <>
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+            <ListCardSkeleton />
+          </>
+        ) : <FlatList
           data={projetos}
           keyExtractor={(item) => item.id?.toString()}
           renderItem={({ item }) => (
@@ -62,7 +79,10 @@ export default function Projetos() {
               name={item.name}
               description={item.description}
               onPress={() => {
-                //
+                router.push({
+                  pathname: '/cadastroProjeto',
+                  params: { id: item.id },
+                });
               }}
               habilidades={item.habilidades}
             />
@@ -78,7 +98,7 @@ export default function Projetos() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-        />
+        />}
       </View>
     </SafeAreaView>
   )

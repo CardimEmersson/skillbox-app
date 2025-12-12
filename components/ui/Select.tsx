@@ -20,9 +20,10 @@ export type SelectProps = Omit<React.ComponentProps<typeof TextInput>, 'onChange
   options: SelectOption[];
   onValueChange: (value: any) => void;
   value: any;
+  error?: string;
 };
 
-export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValueChange, isLoading, editable = true, options, ...props }, ref) => {
+export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValueChange, isLoading, editable = true, options, error, ...props }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -56,7 +57,7 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: [placeholderColor, isFocused && !isDisabled ? tintColor : placeholderColor],
+      outputRange: [placeholderColor, error ? '#EF4444' : (isFocused && !isDisabled ? tintColor : placeholderColor)],
     }),
   };
 
@@ -83,7 +84,11 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
   return (
     <View className={props.className ? props.className : "w-full"}>
       <Pressable onPress={handlePress} disabled={isDisabled} onBlur={onBlur}>
-        <View style={[{ backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor }, styles.selectContainer]} className='rounded-lg justify-center h-[58px]'>
+        <View style={[
+          { backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor },
+          styles.selectContainer,
+          { borderColor: error ? '#EF4444' : 'transparent', borderWidth: 1 }
+        ]} className='rounded-lg justify-center h-[58px]'>
           <Animated.Text style={[labelStyle, {color: isDisabled ? disabledTextColor : labelStyle.color}]} className='absolute left-4'>
             {label}
           </Animated.Text>
@@ -98,6 +103,7 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
           </View>
         </View>
       </Pressable>
+      {error && <Text className="text-red-500 text-sm mt-1 ml-1">{error}</Text>}
       <Modal
         animationType="fade"
         transparent={true}

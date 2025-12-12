@@ -1,3 +1,4 @@
+import { TypeCountData } from "@/app/(tabs)/home";
 import { Colors } from "@/constants/Colors";
 import { useRouter } from "expo-router";
 import { Text, View } from "react-native";
@@ -5,9 +6,11 @@ import { CardCaixaHabilidades } from "../CardCaixaHabilidades";
 
 interface SectionCaixaHabilidadesProps {
   className?: string;
+  countData: TypeCountData;
+  isLoading?: boolean;
 }
 
-export function SectionCaixaHabilidades({ className }: SectionCaixaHabilidadesProps) {
+export function SectionCaixaHabilidades({ className, countData, isLoading }: SectionCaixaHabilidadesProps) {
   const router = useRouter();
 
   return (
@@ -19,16 +22,18 @@ export function SectionCaixaHabilidades({ className }: SectionCaixaHabilidadesPr
           <CardCaixaHabilidades
             colors={[...Colors.greenGradient] as [string, string, ...string[]]}
             label="Habilidades"
-            value="12"
+            value={countData.habilidades?.toString()}
             classNameWrapper="mb-2"
             classNameContent="h-44"
+            isLoading={isLoading}
             onPress={() => router.push('/minhasHabilidades')}
           />
           <CardCaixaHabilidades
             colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
             label="Metas"
-            value="12"
+            value={countData.metas?.toString()}
             classNameContent="h-32"
+            isLoading={isLoading}
             onPress={() => router.push('/metas')}
           />
         </View>
@@ -36,17 +41,19 @@ export function SectionCaixaHabilidades({ className }: SectionCaixaHabilidadesPr
         <View className="w-1/2 pl-1">
           <CardCaixaHabilidades
             colors={[...Colors.orangeGradient] as [string, string, ...string[]]}
-            label="Cursos feitos"
-            value="12"
+            label="Cursos"
+            value={countData.cursos?.toString()}
             classNameWrapper="mb-2"
             classNameContent="h-32"
+            isLoading={isLoading}
             onPress={() => router.push('/cursos')}
           />
           <CardCaixaHabilidades
             colors={[...Colors.blueGradient] as [string, string, ...string[]]}
             label="Projetos"
-            value="12"
+            value={countData.projetos?.toString()}
             classNameContent="h-44"
+            isLoading={isLoading}
             onPress={() => router.push('/projetos')}
           />
         </View>

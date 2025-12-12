@@ -9,8 +9,8 @@ export interface CadastroUsuarioDataForm {
   nivelFormacao: 'fundamental' | 'medio' | 'tecnico' | 'graduacao' | 'pos_graduacao' | 'mestrado' | 'doutorado';
   instituicao: string;
   objetivoProfissional: string;
-  areaSelecionada?: number; 
-  areasUtilizadas: number[];
+  areaSelecionada?: string; 
+  areasUtilizadas: string[];
   bio: string;
   linkedin: string;
   github: string;

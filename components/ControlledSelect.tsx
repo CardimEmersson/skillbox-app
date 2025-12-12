@@ -15,7 +15,7 @@ export const ControlledSelect = forwardRef<TextInput, ControlledSelectProps>(({ 
     <Controller
       control={control}
       name={name}
-      render={({ field: { onChange, value } }) => (
+      render={({ field: { onChange, value }, fieldState: { error } }) => (
         <Select
           ref={ref}
           {...props}
@@ -23,6 +23,7 @@ export const ControlledSelect = forwardRef<TextInput, ControlledSelectProps>(({ 
           placeholder={placeholder}
           value={value}
           onValueChange={onChange}
+          error={error?.message}
         />
       )}
     />

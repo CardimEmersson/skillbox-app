@@ -31,7 +31,7 @@ export default function MinhasHabilidades() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [habilidades, setHabilidades] = useState<IHabilidadeListItem[]>([]);
 
-  async function gethabilidadesData() {
+  async function getHabilidadesData() {
     setIsLoadingData(true);
     try {
       const result = await getHabilidades(userAuth?.id ?? "");
@@ -56,12 +56,12 @@ export default function MinhasHabilidades() {
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await gethabilidadesData();
+    await getHabilidadesData();
     setIsRefreshing(false);
   }, []);
 
   useFocusEffect(useCallback(() => {
-    gethabilidadesData();
+    getHabilidadesData();
   }, []));
 
   return (
@@ -110,9 +110,7 @@ export default function MinhasHabilidades() {
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
 
         />}
-
-
-      </View>
+      </View>      
     </SafeAreaView>
   )
 }

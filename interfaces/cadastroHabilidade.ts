@@ -36,7 +36,7 @@ export interface IGetCategoria {
 
 export interface IGetHabilidade {
   categorias: string[];
-  cursosProjetos: string[]; 
+  cursosProjetos: TypeCursoProjeto[]; 
   id: string; 
   idUser: string; 
   nome: string; 

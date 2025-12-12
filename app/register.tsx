@@ -42,7 +42,17 @@ export default function Register() {
         telefone: data.telefone,
         senha: data.senha,
         email: data.email,
-        sobrenome: data.sobrenome
+        sobrenome: data.sobrenome,
+        areaInteresse: [],
+        bio: "",
+        github: "",
+        imagem: "",
+        instituicao: "",
+        linkedin: "",
+        localizacao: "",
+        nivelFormacao: "",
+        objetivoProfissional: "",
+        site: ""
       }
       const result = await postRegister(dataPost);
 
@@ -118,7 +128,7 @@ export default function Register() {
                   </Text>
                   <ControlledInput
                     control={control}
-                    label='Nome'
+                    label='Nome*'
                     name='nome'
                     placeholder='Nome'
                     className='mb-4'
@@ -128,7 +138,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputSobrenomeRef}
                     control={control}
-                    label='Sobrenome'
+                    label='Sobrenome*'
                     name='sobrenome'
                     placeholder='Sobrenome'
                     className='mb-4'
@@ -138,7 +148,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputEmailRef}
                     control={control}
-                    label='Email'
+                    label='Email*'
                     name='email'
                     placeholder='@email.com'
                     keyboardType='email-address'
@@ -149,7 +159,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputDataNascimentoRef}
                     control={control}
-                    label='Data de nascimento'
+                    label='Data de nascimento*'
                     name='dataNascimento'
                     placeholder='dd/mm/yyyy'
                     className='mb-4'
@@ -160,7 +170,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputTelefoneRef}
                     control={control}
-                    label='Telefone'
+                    label='Telefone*'
                     name='telefone'
                     placeholder='(00) 00000-0000'
                     type='phone'
@@ -172,7 +182,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputSenhaRef}
                     control={control}
-                    label='Senha'
+                    label='Senha*'
                     name='senha'
                     type='password'
                     placeholder='********'
@@ -183,7 +193,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputConfirmarSenhaRef}
                     control={control}
-                    label='Confirmar senha'
+                    label='Confirmar senha*'
                     name='confirmarSenha'
                     type='password'
                     placeholder='********'

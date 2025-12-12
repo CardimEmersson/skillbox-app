@@ -8,9 +8,10 @@ import TabBarBackground from '@/components/ui/TabBarBackground';
 import { TabItem } from '@/components/ui/TabItem';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import Toast from 'react-native-toast-message';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -67,7 +68,7 @@ export default function TabLayout() {
             tabBarLabel: "",
             tabBarIcon: ({ color, size, focused }) => (
               <TabItem color={getColor(isModalVisible)} focused={isModalVisible}>
-                <Ionicons name="add" size={32} color={getColor(isModalVisible)} style={{ height: 30, marginTop: 1 }} />
+                <Feather name="menu" size={32} color={getColor(isModalVisible)} style={{ height: 30, marginTop: 1 }} />
               </TabItem>
             ),
             tabBarButton: ({ children, style }) => (
@@ -113,6 +114,7 @@ export default function TabLayout() {
         <Tabs.Screen name="notificacoes" options={{ href: null }} />
       </Tabs>
       <ActionModal isVisible={isModalVisible} onClose={toggleModal} />
+      <Toast />
     </View>
   );
 }

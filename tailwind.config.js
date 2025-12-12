@@ -13,6 +13,7 @@ module.exports = {
         'pink': '#FF1B5E',
         'orange': '#FF9E2D',
         'red': '#EB5757',
+        'red-secondary': '#FF6B6B',
         'purple': '#9B51E0',
         'blue': '#29BAE2',
         'link': "#4D81E7",
