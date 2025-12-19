@@ -1,23 +1,12 @@
-import { UserAuthType } from "@/comtexts/authContext";
-import { IPostLogin } from "@/interfaces/login";
+import { IPostLogin, IPostLoginResponse } from "@/interfaces/login";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
 
-export async function postLogin(data: IPostLogin): Promise<UserAuthType | null> {
+export async function postLogin(data: IPostLogin): Promise<IPostLoginResponse | null> {
   try {
-    const findedUser = await api.get<UserAuthType[]>(`/users?email=${data.login}`).then((response) => response.data);
+    const response = await api.post<IPostLoginResponse>(`/auth/login`, data).then((response) => response.data);
 
-    if (!findedUser.length) {
-      throw new Error("Email ou senha inválidos.");
-    }
-
-    const user = findedUser[0];
-
-    if (user.senha !== data.senha) {
-      throw new Error("Email ou senha inválidos.");
-    }
-
-    return user;
+    return response;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél realizar o login! Tente mais tarde");
   }

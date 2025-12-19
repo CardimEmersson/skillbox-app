@@ -7,10 +7,8 @@ import { ImageUploader } from "@/components/ui/ImageUploader";
 import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
 import { HabilidadeSchema } from "@/data/shemas/habilidadeSchema";
-import { CadastroHabilidadeDataForm, IPostHabilidade } from "@/interfaces/cadastroHabilidade";
-import { getCursos } from "@/services/modules/cursoService";
+import { CadastroHabilidadeDataForm } from "@/interfaces/cadastroHabilidade";
 import { deleteHabilidade, getCategorias, getHabilidadeById, postCategoria, postHabilidade, putHabilidade } from "@/services/modules/habilidadeService";
-import { getProjetos } from "@/services/modules/projetoService";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
@@ -31,7 +29,7 @@ const optionsProficiencia: SelectOption[] = [
 ];
 
 const defaultValuesCadatroHabilidade: CadastroHabilidadeDataForm = {
-  icone: '',
+  icone: undefined,
   nome: '',
   proficiencia: 'iniciante',
   categoriaSelecionada: undefined,
@@ -82,7 +80,7 @@ export default function CadastroHabilidade() {
 
   function onAddCategoria() {
     if (watch().categoriaSelecionada) {
-      const categoriaSelecionada = getValues().categoriaSelecionada ?? "";
+      const categoriaSelecionada = getValues().categoriaSelecionada ?? 0;
       const findedCategoria = getValues().categorias.find((categoria) => categoria === watch().categoriaSelecionada);
 
       if (!findedCategoria) {
@@ -99,7 +97,7 @@ export default function CadastroHabilidade() {
     });
   }
 
-  function onRemoveCategoria(categoria: string) {
+  function onRemoveCategoria(categoria: number) {
     const filteredCategorias = getValues().categorias.filter((item) => item !== categoria);
     setValue("categorias", filteredCategorias, {
       shouldDirty: true,
@@ -152,16 +150,15 @@ export default function CadastroHabilidade() {
 
       if (nomesCategorias.length) {
         const promises = nomesCategorias.map((nome) => postCategoria({
-          idUser: userAuth?.id ?? "",
           nome
         }));
         const result = await Promise.all(promises);
 
         if (result.length) {
-          const options: SelectOption[] = result?.map((item) => {
+          const options: SelectOption[] = result?.map((item, index) => {
             return {
-              label: item?.nome ?? "",
-              value: item?.id ?? "",
+              label: nomesCategorias[index] ?? "",
+              value: item?.id ?? 0,
             }
           });
           return options;
@@ -181,23 +178,30 @@ export default function CadastroHabilidade() {
       const categoriasCriadas = await postCategoriasData(novasCategoriasParaCriar);
 
       const categoriasHabilidade = [...categoriasExistentes, ...categoriasCriadas].map((item) => {
-        return item.value
+        return Number(item.value ?? 0)
       });
 
-      const postData: IPostHabilidade = {
-        categorias: categoriasHabilidade,
-        nome: data.nome,
-        proficiencia: data.proficiencia,
-        cursosProjetos: data.cursosProjetos,
-        idUser: userAuth?.id ?? "",
+      const formDataHabilidade = new FormData();
+      formDataHabilidade.append('nome', data.nome);
+      formDataHabilidade.append('nivel', data.proficiencia);
+      categoriasHabilidade.forEach((id) => {
+        formDataHabilidade.append('categorias[]', id.toString());
+      });
+
+      if (data.icone) {
+        formDataHabilidade.append('icone', {
+          uri: data.icone.uri,
+          name: data.icone.fileName ?? data.icone.uri.split('/').pop() ?? 'icone.jpg',
+          type: (data.icone as any).mimeType ?? 'image/jpeg',
+        } as any);
       }
 
       let result;
 
       if (params.id) {
-        result = await putHabilidade(params.id, postData);
+        result = await putHabilidade(params.id, formDataHabilidade);
       } else {
-        result = await postHabilidade(postData);
+        result = await postHabilidade(formDataHabilidade);
       }
 
       if (result) {
@@ -237,7 +241,7 @@ export default function CadastroHabilidade() {
   async function getCategoriasData() {
     setIsLoadingCategorias(true);
     try {
-      const result = await getCategorias(userAuth?.id ?? "");
+      const result = await getCategorias();
 
       if (result.length) {
         const options: SelectOption[] = result.map((item) => {
@@ -260,24 +264,24 @@ export default function CadastroHabilidade() {
   async function getCursosProjetosData() {
     setIsLoadingCursosProjetos(true);
     try {
-      const [cursos, projetos] = await Promise.all([getCursos(userAuth?.id ?? ""), getProjetos(userAuth?.id ?? "")]);
+      // const [cursos, projetos] = await Promise.all([getCursos(), getProjetos()]);
 
-      const optionsCursos: SelectionOptionCursoProjeto[] = cursos?.map((item) => {
-        return {
-          label: item.nome,
-          value: item.id,
-          tipo: 'curso',
-        }
-      }) ?? [];
-      const optionsProjetos: SelectionOptionCursoProjeto[] = projetos?.map((item) => {
-        return {
-          label: item.nome,
-          value: item.id,
-          tipo: 'projeto',
-        }
-      }) ?? [];
+      // const optionsCursos: SelectionOptionCursoProjeto[] = cursos?.map((item) => {
+      //   return {
+      //     label: item.nome,
+      //     value: item.id,
+      //     tipo: 'curso',
+      //   }
+      // }) ?? [];
+      // const optionsProjetos: SelectionOptionCursoProjeto[] = projetos?.map((item) => {
+      //   return {
+      //     label: item.nome,
+      //     value: item.id,
+      //     tipo: 'projeto',
+      //   }
+      // }) ?? [];
 
-      setOptionsCursosProjetos([...optionsCursos, ...optionsProjetos]);
+      // setOptionsCursosProjetos([...optionsCursos, ...optionsProjetos]);
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro na curso', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
@@ -285,17 +289,18 @@ export default function CadastroHabilidade() {
     }
   }
 
-  async function getHabilidadeByIdData(idHabilidade: string) {
+  async function getHabilidadeByIdData(idHabilidade: number) {
     setIsLoadingData(true);
     try {
       const result = await getHabilidadeById(idHabilidade);
       if (result) {
+        setImage(result.icone ?? "");
         reset({
-          categorias: result.categorias,
-          cursosProjetos: result.cursosProjetos,
-          icone: "",
+          categorias: result.categorias?.map((item) => item.id) ?? [],
+          cursosProjetos: [],
+          icone: undefined,
           nome: result.nome,
-          proficiencia: result.proficiencia,
+          proficiencia: result.nivel,
         });
       }
     } catch (error: any) {
@@ -311,7 +316,7 @@ export default function CadastroHabilidade() {
       getCategoriasData();
       getCursosProjetosData();
 
-      params.id && getHabilidadeByIdData(params.id);
+      params.id && getHabilidadeByIdData(Number(params.id));
 
       return () => {
         reset(defaultValuesCadatroHabilidade);
@@ -328,7 +333,7 @@ export default function CadastroHabilidade() {
       >
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
-            title="Cadastrar habilidade"
+            title={params?.id ? "Editar habilidade" : "Cadastrar habilidade"}
             onBack={() => {
               router.push('/minhasHabilidades')
             }}
@@ -345,10 +350,16 @@ export default function CadastroHabilidade() {
             renderItem={null}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 4 }}
+            keyboardShouldPersistTaps="handled"
             ListHeaderComponent={
               <>
                 <View className="w-full items-center mb-6 mt-6">
-                  <ImageUploader image={image} setImage={setImage} />
+                  <ImageUploader image={image} setImage={setImage} callbackFile={(image) => {
+                    setValue("icone", image, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }} />
                   <Text className='font-inter-semibold text-md text-start mr-2'>Icone</Text>
                 </View>
 
@@ -385,7 +396,7 @@ export default function CadastroHabilidade() {
                       inputValue={inputValueCategoria}
                       isLoading={isLoadingCategorias || isLoadingData}
                     />
-                    <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCategoria}>
+                    <Pressable className={`w-1/4 flex items-center justify-center ${watch().categoriaSelecionada ? '' : 'opacity-50'}`} onPress={onAddCategoria} disabled={!watch().categoriaSelecionada}>
                       <Ionicons name="add-circle" size={40} color="black" />
                     </Pressable>
                   </View>

@@ -10,9 +10,10 @@ interface ImageUploaderProps {
   image: string | null;
   setImage: (uri: string | null) => void;
   disabled?: boolean;
+  callbackFile?: (image: ImagePicker.ImagePickerAsset) => void;
 }
 
-export function ImageUploader({ image, setImage, disabled }: ImageUploaderProps) {
+export function ImageUploader({ image, setImage, disabled, callbackFile }: ImageUploaderProps) {
   const color = useThemeColor({}, 'text');
   const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#ffffff10' }, 'background');
 
@@ -35,6 +36,7 @@ export function ImageUploader({ image, setImage, disabled }: ImageUploaderProps)
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
+      callbackFile?.(result.assets?.[0]);
       setImage(uri);
     }
   };

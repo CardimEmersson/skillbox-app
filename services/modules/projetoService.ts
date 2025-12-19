@@ -1,4 +1,5 @@
-import { IGetProjeto, IPostProjeto } from "@/interfaces/cadastroProjeto";
+import { IApiPaginate, IParamsPaginate } from "@/interfaces/apiRequest";
+import { IGetProjeto, IGetProjetoById, IPostProjeto } from "@/interfaces/cadastroProjeto";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
 
@@ -25,22 +26,24 @@ export async function putProjeto(idProjeto: string, data: IPostProjeto): Promise
   return false;
 }
 
-export async function getProjetos(idUser: string, params?: string): Promise<IGetProjeto[]> {
+export async function getProjetos(params?: IParamsPaginate): Promise<IApiPaginate<IGetProjeto> | null> {
   try {
-    const responseData = await api.get<IGetProjeto[]>(`/projetos?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
+    const responseData = await api.get<IApiPaginate<IGetProjeto>>("/projetos", {
+      params
+    }).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél listar as projetos! Tente mais tarde");
   }
-  return [];
+  return null;
 }
 
 
-export async function getProjetoById(id: string): Promise<IGetProjeto | null> {
+export async function getProjetoById(id: string): Promise<IGetProjetoById | null> {
   if (!id) throw new Error("Id do projeto não informado");
   try {
-    const responseData = await api.get<IGetProjeto>(`/projetos/${id}`).then((response) => response.data);
+    const responseData = await api.get<IGetProjetoById>(`/projetos/${id}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

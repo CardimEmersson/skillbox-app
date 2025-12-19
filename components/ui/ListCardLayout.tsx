@@ -14,18 +14,18 @@ interface ListCardLayoutProps {
 export function ListCardLayout({ colors, children, onEdit, showEdit = true, className }: ListCardLayoutProps) {
 
   return (
+    <Pressable onPress={onEdit}>
     <View className={`rounded-xl overflow-hidden mt-5`}>
       <LinearGradient
         colors={colors}
         className={className ?? `py-4 px-6 relative`}
       >
         {children}
-        {showEdit && <View className="flex flex-row absolute top-4 right-4">
-          <Pressable onPress={onEdit}>
-            <MaterialIcons name="edit" size={24} color="black" />
-          </Pressable>
+        {showEdit && <View className="flex flex-row absolute top-4 right-4">          
+          <MaterialIcons name="edit" size={24} color="black" />
         </View>}
       </LinearGradient>
     </View>
+    </Pressable>
   )
 }

@@ -2,10 +2,9 @@ import { ListCard } from '@/components/MinhasHabilidades/ListCard';
 import { ListCardSkeleton } from '@/components/MinhasHabilidades/ListCard.skeleton';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { HeaderList } from '@/components/ui/HeaderList';
-import { AuthContext } from '@/comtexts/authContext';
 import { getHabilidades } from '@/services/modules/habilidadeService';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useContext, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 import Toast from 'react-native-toast-message';
 
@@ -26,7 +25,6 @@ const percentualHabilidade = {
 export default function MinhasHabilidades() {
   const router = useRouter();
   
-  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [habilidades, setHabilidades] = useState<IHabilidadeListItem[]>([]);
@@ -34,19 +32,21 @@ export default function MinhasHabilidades() {
   async function getHabilidadesData() {
     setIsLoadingData(true);
     try {
-      const result = await getHabilidades(userAuth?.id ?? "");
+      const result = await getHabilidades();
 
-      const formatedItems: IHabilidadeListItem[] = result?.map((item) => {
-        return {
-          id: item.id,
-          name: item.nome,
-          nivel: item.proficiencia,
-          percentual: percentualHabilidade[item.proficiencia],
-          imagem: ""
-        }
-      }) ?? [];
-
-      setHabilidades(formatedItems);
+      if (result) {
+        const formatedItems: IHabilidadeListItem[] = result?.data?.map((item) => {
+          return {
+            id: item.id,
+            name: item.nome,
+            nivel: item.nivel,
+            percentual: percentualHabilidade[item.nivel],
+            imagem: item.icone ?? null,
+          }
+        }) ?? [];
+  
+        setHabilidades(formatedItems);
+      }
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {

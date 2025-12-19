@@ -1,10 +1,14 @@
-import { IPostRegister } from "@/interfaces/register";
+import { IPostUsuarioResponse } from "@/interfaces/register";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
 
-export async function postRegister(data: IPostRegister): Promise<boolean> {
+export async function postRegister(data: FormData): Promise<boolean> {
   try {
-    const responseData = await api.post<string>("/users", data).then((response) => response.data);
+    const responseData = await api.post<IPostUsuarioResponse>("/usuarios", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {

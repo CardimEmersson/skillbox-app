@@ -8,7 +8,7 @@ import { CustomButton } from '@/components/ui/CustomButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { AuthContext } from '@/comtexts/authContext';
 import { LoginSchema } from '@/data/shemas/loginSchema';
-import { LoginDataForm } from '@/interfaces/login';
+import { IPostLogin, LoginDataForm } from '@/interfaces/login';
 import { postLogin } from '@/services/modules/loginService';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
@@ -33,10 +33,25 @@ export default function Login() {
   async function handleLogin(data: LoginDataForm) {
     setIsSubmitting(true);
     try {
-      const result = await postLogin(data);
+      const postData: IPostLogin = {
+        email: data.login,
+        senha: data.senha,
+      }
+
+      const result = await postLogin(postData);
 
       if (result) {
-        handleUserAuth(result);
+        handleUserAuth({
+          token: result.access_token,
+          nome: result.user?.nome,
+          sobrenome: result.user?.sobrenome,
+          email: result.user?.email,
+          telefone: result.user?.telefone,
+          dataNascimento: result.user?.data_nascimento,
+          bio: "",
+          id: result.user?.id,
+          imagem: result.user?.avatar_url,
+        });
         router.push('/home');
       }
     } catch (error: any) {
@@ -83,7 +98,6 @@ export default function Login() {
           </Pressable>
           <CustomButton
             title='Entrar'
-            // onPress={() => router.push('/home')}
             onPress={handleSubmit(handleLogin)}
             isLoading={isSubmitting}
             className="w-full mb-2"

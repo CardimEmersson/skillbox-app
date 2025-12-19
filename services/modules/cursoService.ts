@@ -1,3 +1,4 @@
+import { IApiPaginate, IParamsPaginate } from "@/interfaces/apiRequest";
 import { IGetCurso, IPostCurso } from "@/interfaces/cadastroCurso";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
@@ -25,15 +26,17 @@ export async function putCurso(idCurso: string, data: IPostCurso): Promise<boole
   return false;
 }
 
-export async function getCursos(idUser: string, params?: string): Promise<IGetCurso[]> {
+export async function getCursos(params?: IParamsPaginate): Promise<IApiPaginate<IGetCurso> | null> {
   try {
-    const responseData = await api.get<IGetCurso[]>(`/cursos?idUser=${idUser}${params ?? ""}`).then((response) => response.data);
+    const responseData = await api.get<IApiPaginate<IGetCurso>>("/cursos", {
+      params
+    }).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél listar os cursos! Tente mais tarde");
   }
-  return [];
+  return null;
 }
 
 export async function getCursoById(id: string): Promise<IGetCurso | null> {

@@ -4,6 +4,19 @@ export interface LoginDataForm {
 }
 
 export interface IPostLogin {
-  login: string;
+  email: string;
   senha: string;
+}
+
+export interface IPostLoginResponse {
+  access_token: string;
+  user: {
+    id: number;
+    nome: string;
+    sobrenome: string;
+    email: string;
+    telefone: string;
+    data_nascimento: string;
+    avatar_url: string;
+  },
 }

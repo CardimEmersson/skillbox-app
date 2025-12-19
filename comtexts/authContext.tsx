@@ -1,13 +1,14 @@
-import { createContext, ReactNode, useMemo, useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createContext, ReactNode, useEffect, useMemo, useState } from "react";
 
 export type UserAuthType = {
   dataNascimento: string; 
   email: string; 
-  id: string
+  id: number;
+  token: string;
   nome: string; 
   sobrenome: string; 
   telefone: string;
-  senha: string;
   imagem: string;
   bio: string;
 }
@@ -16,6 +17,7 @@ interface AuthContextProps {
   userAuth: UserAuthType | null;
   handleUserAuth: (value: UserAuthType | null) => void;
   logout: () => void;
+  isLoading: boolean;
 }
 
 export const AuthContext = createContext({} as AuthContextProps);
@@ -26,13 +28,36 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [userAuth, setUserAuth] = useState<UserAuthType | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    async function loadStorageData() {
+      try {
+        const storageUser = await AsyncStorage.getItem("@SkillBox:user");
 
-  function logout() {
+        if (storageUser) {
+          setUserAuth(JSON.parse(storageUser));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadStorageData();
+  }, []);
+
+  async function logout() {
+    await AsyncStorage.removeItem("@SkillBox:user");
     setUserAuth(null);
   }
 
-  function handleUserAuth(value: UserAuthType | null) {
+  async function handleUserAuth(value: UserAuthType | null) {
     setUserAuth(value);
+    if (value) {
+      await AsyncStorage.setItem("@SkillBox:user", JSON.stringify(value));
+    } else {
+      await AsyncStorage.removeItem("@SkillBox:user");
+    }
   }
 
   const valuesProvider = useMemo(() => {
@@ -40,8 +65,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       userAuth,
       handleUserAuth,
       logout,
+      isLoading,
     }
-  }, [userAuth])
+  }, [userAuth, isLoading])
 
   return (
     <AuthContext.Provider

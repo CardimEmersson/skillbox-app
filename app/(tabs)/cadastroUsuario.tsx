@@ -269,7 +269,7 @@ export default function CadastroUsuario() {
             }}
             disabledAdd
           />
-          <ScrollView ref={scrollViewRef} className="mt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 4, paddingHorizontal: 4 }}>
+          <ScrollView ref={scrollViewRef} className="mt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 4, paddingHorizontal: 4 }} keyboardShouldPersistTaps="handled">
             <View className="w-full items-center mb-6 mt-6">
               <ImageUploader image={image} setImage={setImage} />
             </View>

@@ -3,7 +3,7 @@ import { TypeCursoProjeto } from "./cadastroHabilidade";
 export interface CadastroProjetoDataForm {
   nome: string;
   periodo: string;
-  habilidadeSelecionada?: string; 
+  habilidadeSelecionada?: string;
   habilidadesUtilizadas: string[];
   tipoProjeto: string;
   descricao: string;
@@ -29,17 +29,26 @@ export interface IPostProjeto {
 }
 
 export interface IGetProjeto {
-  cursos: string[]; 
-  descricao: string; 
-  habilidadesUtilizadas: {
-    nome: string;
-    id: string;
-  }[]; 
-  id: string; 
-  idUser: string; 
-  link: string; 
+  id: number;
   nome: string;
-  periodo: string;
-  tipoProjeto: string;
-  imagens: string[];
+  periodo_inicial: string;
+  periodo_final: string;
+  tipo_projeto: string;
+  descricao: string;
+  link: string;
+  imagens: {
+    id: number;
+    imagem_url: string;
+    uploaded_at: string;
+  }[];
+}
+
+export interface IGetProjetoById extends IGetProjeto {
+  habilidades: {
+    id: number;
+    nome: string;
+    icone: string;
+    nivel: string;
+  }[];
+  cursos: any[]
 }

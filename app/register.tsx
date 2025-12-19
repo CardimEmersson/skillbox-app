@@ -3,8 +3,9 @@ import { ControlledInput } from "@/components/ControlledInput";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { sizes } from '@/constants/Sizes';
 import { RegisterSchema } from '@/data/shemas/registerSchema';
-import { IPostRegister, RegisterDataForm } from '@/interfaces/register';
+import { RegisterDataForm } from '@/interfaces/register';
 import { postRegister } from '@/services/modules/registerService';
+import { convertDateToIso } from '@/utils/date';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useRouter } from "expo-router";
@@ -12,7 +13,6 @@ import { useRef, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import Toast from 'react-native-toast-message';
-
 
 export default function Register() {
   const router = useRouter();
@@ -30,31 +30,30 @@ export default function Register() {
     control,
     handleSubmit
   } = useForm<RegisterDataForm>({
-    resolver: yupResolver(RegisterSchema)
+    resolver: yupResolver(RegisterSchema) as any,
   });
 
   async function handleRegister(data: RegisterDataForm) {
     setIsSubmitting(true);
     try {
-      const dataPost: IPostRegister = {
-        nome: data.nome,
-        dataNascimento: data.dataNascimento,
-        telefone: data.telefone,
-        senha: data.senha,
-        email: data.email,
-        sobrenome: data.sobrenome,
-        areaInteresse: [],
-        bio: "",
-        github: "",
-        imagem: "",
-        instituicao: "",
-        linkedin: "",
-        localizacao: "",
-        nivelFormacao: "",
-        objetivoProfissional: "",
-        site: ""
-      }
-      const result = await postRegister(dataPost);
+      const formData = new FormData();
+      formData.append('nome', data.nome);
+      formData.append('sobrenome', data.sobrenome);
+      formData.append('email', data.email);
+      formData.append('telefone', data.telefone ?? "");
+      formData.append('dataNascimento', convertDateToIso(data.dataNascimento));
+      formData.append('bio', "");
+      formData.append('senha', data.senha);
+      formData.append('localizacao', "");
+      formData.append('nivel_formacao', "");
+      formData.append('instituicao', "");
+      formData.append('objetivo_profissional', "");
+      formData.append('area_interesse', "");
+      formData.append('linkedin', "");
+      formData.append('github', "");
+      formData.append('site', "");
+
+      const result = await postRegister(formData);
 
       if (result) {
         Toast.show({
@@ -62,7 +61,9 @@ export default function Register() {
           text1: 'Sucesso!',
           text2: 'Sua conta foi criada.',
         });
-        router.push('/login');
+        setTimeout(() => {
+          router.push('/login');
+        }, 500);
       }
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro no cadastro', text2: error?.message ?? "Tente novamente mais tarde." });
@@ -170,7 +171,7 @@ export default function Register() {
                   <ControlledInput
                     ref={inputTelefoneRef}
                     control={control}
-                    label='Telefone*'
+                    label='Telefone'
                     name='telefone'
                     placeholder='(00) 00000-0000'
                     type='phone'

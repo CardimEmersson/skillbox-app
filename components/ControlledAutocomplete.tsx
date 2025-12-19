@@ -39,7 +39,7 @@ export function ControlledAutocomplete({
   error,
   inputValue,
   handleInputValue,
-  isLoading
+  isLoading,
 }: ControlledAutocompleteProps) {
   
   const [filteredOptions, setFilteredOptions] = useState<SelectOption[]>([]);

@@ -3,10 +3,6 @@ import { SectionCaixaHabilidades } from '@/components/Home/SectionCaixaHabilidad
 import { SectionCategorias } from '@/components/Home/SectionCategorias';
 import { SectionCursos } from '@/components/Home/SectionCursos';
 import { AuthContext } from '@/comtexts/authContext';
-import { getCursos } from '@/services/modules/cursoService';
-import { getHabilidades } from '@/services/modules/habilidadeService';
-import { getMetas } from '@/services/modules/metaService';
-import { getProjetos } from '@/services/modules/projetoService';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useContext, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
@@ -33,19 +29,19 @@ export default function Home() {
   async function getCountData() {
     setIsLoadingCountData(true);
     try {
-      const [cursos, habilidades, metas, projetos] = await Promise.all([
-        getCursos(userAuth?.id ?? ""),
-        getHabilidades(userAuth?.id ?? ""),
-        getMetas(userAuth?.id ?? ""),
-        getProjetos(userAuth?.id ?? "")
-      ]);
+      // const [cursos, habilidades, metas, projetos] = await Promise.all([
+      //   getCursos(userAuth?.id ?? ""),
+      //   getHabilidades(userAuth?.id ?? ""),
+      //   getMetas(userAuth?.id ?? ""),
+      //   getProjetos(userAuth?.id ?? "")
+      // ]);
 
-      setCountData({
-        cursos: cursos?.length ?? 0,
-        habilidades: habilidades?.length ?? 0,
-        metas: metas?.length ?? 0,
-        projetos: projetos?.length ?? 0,
-      });
+      // setCountData({
+      //   cursos: cursos?.length ?? 0,
+      //   habilidades: habilidades?.length ?? 0,
+      //   metas: metas?.length ?? 0,
+      //   projetos: projetos?.length ?? 0,
+      // });
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
