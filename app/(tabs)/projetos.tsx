@@ -2,15 +2,14 @@ import { ListCardSkeleton } from "@/components/MinhasHabilidades/ListCard.skelet
 import { ListCard } from "@/components/Projetos/ListCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeaderList } from "@/components/ui/HeaderList";
-import { AuthContext } from "@/comtexts/authContext";
 import { getProjetos } from "@/services/modules/projetoService";
+import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface IProjetoListItem {
-  id: string;
+  id: number;
   name: string;
   description: string;
   habilidades: string[];
@@ -18,7 +17,6 @@ interface IProjetoListItem {
 
 export default function Projetos() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [projetos, setProjetos] = useState<IProjetoListItem[]>([]);
@@ -26,20 +24,23 @@ export default function Projetos() {
   async function getProjetosData() {
     setIsLoadingData(true);
     try {
-      const result = await getProjetos(userAuth?.id ?? "");
+      const result = await getProjetos();
 
-      const formatedItems: IProjetoListItem[] = result?.map((item) => {
+      const formatedItems: IProjetoListItem[] = result?.data?.map((item) => {
         return {
           id: item.id,
           name: item.nome,
           description: item.descricao,
-          habilidades: item.habilidadesUtilizadas?.map((item) => item.nome) ?? []
+          habilidades: item.habilidades?.map((item) => item.nome) ?? []
         }
       }) ?? [];
 
       setProjetos(formatedItems);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no projeto',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }

@@ -18,10 +18,10 @@ export async function postHabilidade(formData: FormData): Promise<boolean> {
   return false;
 }
 
-export async function putHabilidade(idHabilidade: string, data: FormData): Promise<boolean> {
+export async function putHabilidade(idHabilidade: number, data: FormData): Promise<boolean> {
   if (!idHabilidade) throw new Error("Id da habilidade não informado");
   try {
-    const responseData = await api.put<string>(`/habilidades/${idHabilidade}`, data, {
+    const responseData = await api.put<IApiResponseSuccess>(`/habilidades/${idHabilidade}`, data, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -58,7 +58,7 @@ export async function getHabilidadeById(id: number): Promise<IGetHabilidade | nu
   return null;
 }
 
-export async function deleteHabilidade(id: string): Promise<IApiResponseDeleteSuccess | null> {
+export async function deleteHabilidade(id: number): Promise<IApiResponseDeleteSuccess | null> {
   if (!id) throw new Error("Id da habilidade não informado");
   try {
     const responseData = await api.delete<IApiResponseDeleteSuccess>(`/habilidades/${id}`).then((response) => response.data);

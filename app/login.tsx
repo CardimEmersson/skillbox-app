@@ -6,7 +6,7 @@ import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { ControlledInput } from '@/components/ControlledInput';
 import { CustomButton } from '@/components/ui/CustomButton';
 import { IconButton } from '@/components/ui/IconButton';
-import { AuthContext } from '@/comtexts/authContext';
+import { AuthContext } from '@/contexts/authContext';
 import { LoginSchema } from '@/data/shemas/loginSchema';
 import { IPostLogin, LoginDataForm } from '@/interfaces/login';
 import { postLogin } from '@/services/modules/loginService';

@@ -1,28 +1,27 @@
+import { ImagePickerAsset } from "expo-image-picker";
+
 export interface CadastroCursoDataForm {
   nome: string;
   plataformaInstituicao: string;
   dataConclusao: string;
   emAndamento: boolean;
   cargaHoraria: string;
-  habilidadeSelecionada?: string;
-  habilidadesDesenvolvidas: string[];
+  habilidadeSelecionada?: number;
+  habilidadesDesenvolvidas: number[];
   link: string;
-  imagens: string[];
+  imagens: ImagePickerAsset[];
 }
 
 export interface IPostCurso {
   nome: string;
-  plataformaInstituicao: string;
-  dataConclusao: string;
-  emAndamento: boolean;
-  cargaHoraria: string;
-  habilidadesDesenvolvidas: {
-    nome: string;
-    id: string;
-  }[];
+  plataforma_instituicao: string;
+  prazo_conclusao: string;
+  em_andamento: boolean;
+  instructor: string;
+  carga_horaria: string;
   link: string;
+  habilidades: number[];
   imagens: string[];
-  idUser: string;
 }
 
 export interface IGetCurso {
@@ -40,5 +39,9 @@ export interface IGetCurso {
     icone: string;
     nivel: string;
   }[];
-  imagens: string[];
+  imagens: {
+    id: number;
+    imagem_url: string;
+    uploaded_at: string;
+  }[];
 }

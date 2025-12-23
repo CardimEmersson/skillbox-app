@@ -1,18 +1,19 @@
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
 import { ThemedText } from "@/components/ThemedText";
-import { BadgeClose, Checkbox, ConfirmationModal, CustomButton, HeaderList, MultiImageUploader, SelectOption } from "@/components/ui";
-import { AuthContext } from "@/comtexts/authContext";
+import { BadgeClose, Checkbox, ConfirmationModal, CustomButton, HeaderList, MultiImageUploader, SelectOption, TypeImage } from "@/components/ui";
 import { CursoSchema } from "@/data/shemas/cursoSchema";
-import { CadastroCursoDataForm, IPostCurso } from "@/interfaces/cadastroCurso";
+import { CadastroCursoDataForm } from "@/interfaces/cadastroCurso";
 import { deleteCurso, getCursoById, postCurso, putCurso } from "@/services/modules/cursoService";
 import { getHabilidades } from "@/services/modules/habilidadeService";
+import { convertDateToIso, convertIsoToDate } from "@/utils/date";
+import { customToastError } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useContext, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, TextInput, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, TextInput, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const defaultValuesCadatroCurso: CadastroCursoDataForm = {
@@ -29,13 +30,14 @@ const defaultValuesCadatroCurso: CadastroCursoDataForm = {
 
 export default function CadastroCurso() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
   const params = useLocalSearchParams<{ id?: string }>();
   const inputPlataformaInstituicaoRef = useRef<TextInput>(null);
   const inputDataConclusaoRef = useRef<TextInput>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingHabilidades, setIsLoadingHabilidades] = useState(false);
   const [optionsHabilidades, setOptionsHabilidades] = useState<SelectOption[]>([]);
+  const [images, setImages] = useState<TypeImage[]>([]);
+  const [initialImages, setInitialImages] = useState<TypeImage[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
 
@@ -53,7 +55,7 @@ export default function CadastroCurso() {
 
   function onAddHabilidade() {
     if (watch().habilidadeSelecionada) {
-      const habilidadeSelecionada: string = getValues().habilidadeSelecionada ?? "";
+      const habilidadeSelecionada: number = getValues().habilidadeSelecionada ?? 0;
       const findedHabilidade = getValues().habilidadesDesenvolvidas.find((habilidade) => habilidade === watch().habilidadeSelecionada);
 
       if (!findedHabilidade) {
@@ -69,7 +71,7 @@ export default function CadastroCurso() {
     });
   }
 
-  function onRemoveHabilidade(habilidade: string) {
+  function onRemoveHabilidade(habilidade: number) {
     const filteredCategorias = getValues().habilidadesDesenvolvidas.filter((item) => item !== habilidade);
     setValue("habilidadesDesenvolvidas", filteredCategorias, {
       shouldDirty: true,
@@ -80,39 +82,39 @@ export default function CadastroCurso() {
   async function handleSubmitCurso(data: CadastroCursoDataForm) {
     setIsSubmitting(true);
     try {
-      const habilidadesDesenvolvidas: {
-        nome: string;
-        id: string;
-      }[] = [];
-
-      data.habilidadesDesenvolvidas?.forEach((item) => {
-        const findedHabilidade = optionsHabilidades?.find((option) => option.value === item);
-
-        if (findedHabilidade) {
-          habilidadesDesenvolvidas.push({
-            nome: findedHabilidade.label,
-            id: findedHabilidade.value
-          })
+      const excluir_imagens_ids: number[] = [];
+      initialImages?.forEach((item) => {
+        if (!images.some((image) => image.id === item.id)) {
+          item.id && excluir_imagens_ids.push(item.id);
         }
       });
 
-      const postData: IPostCurso = {
-        nome: data.nome,
-        plataformaInstituicao: data.plataformaInstituicao,
-        dataConclusao: data.dataConclusao,
-        emAndamento: data.emAndamento,
-        cargaHoraria: data.cargaHoraria,
-        habilidadesDesenvolvidas,
-        link: data.link,
-        imagens: data.imagens,
-        idUser: userAuth?.id ?? "",
-      }
+      const formDataCurso = new FormData();
+      formDataCurso.append('nome', data.nome);
+      formDataCurso.append('plataforma_instituicao', data.plataformaInstituicao);
+      data.dataConclusao && formDataCurso.append('prazo_conclusao', convertDateToIso(data.dataConclusao));
+      formDataCurso.append('em_andamento', data.emAndamento.toString());
+      formDataCurso.append('carga_horaria', data.cargaHoraria);
+      formDataCurso.append('link', data.link);
+      data.imagens?.forEach((item) => {
+        formDataCurso.append('imagens', {
+          uri: item.uri,
+          name: item.fileName ?? item.uri.split('/').pop() ?? 'imagem.jpg',
+          type: (item as any).mimeType ?? 'image/jpeg',
+        } as any);
+      });
+      data.habilidadesDesenvolvidas?.forEach((item) => {
+        formDataCurso.append('habilidades[]', item.toString());
+      });
+      excluir_imagens_ids?.forEach((item) => {
+        formDataCurso.append('excluir_imagens_ids[]', item.toString());
+      });
 
       let result;
       if (params?.id) {
-        result = await putCurso(params.id, postData);
+        result = await putCurso(Number(params.id), formDataCurso);
       } else {
-        result = await postCurso(postData);
+        result = await postCurso(formDataCurso);
       }
 
       if (result) {
@@ -124,7 +126,10 @@ export default function CadastroCurso() {
         setTimeout(() => router.push('/cursos'), 300);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no curso', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no curso',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -133,9 +138,11 @@ export default function CadastroCurso() {
   async function gethabilidadesData() {
     setIsLoadingHabilidades(true);
     try {
-      const result = await getHabilidades(userAuth?.id ?? "");
+      const result = await getHabilidades({
+        limit: 9999
+      });
 
-      const formatedItems: SelectOption[] = result?.map((item) => {
+      const formatedItems: SelectOption[] = result?.data?.map((item) => {
         return {
           value: item.id,
           label: item.nome
@@ -144,30 +151,45 @@ export default function CadastroCurso() {
 
       setOptionsHabilidades(formatedItems);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na habilidade',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingHabilidades(false);
     }
   }
 
-  async function getCursoByIdData(idCurso: string) {
+  async function getCursoByIdData(idCurso: number) {
     setIsLoadingData(true);
     try {
       const result = await getCursoById(idCurso);
+
       if (result) {
         reset({
-          nome: result.nome,
-          plataformaInstituicao: result.plataformaInstituicao,
-          dataConclusao: result.dataConclusao,
-          emAndamento: result.emAndamento,
-          cargaHoraria: result.cargaHoraria,
-          habilidadesDesenvolvidas: result.habilidadesDesenvolvidas.map((habilidade) => habilidade.id),
+          nome: result.nome ?? "",
+          plataformaInstituicao: result.plataforma_instituicao ?? "",
+          dataConclusao: convertIsoToDate(result.prazo_conclusao ?? ""),
+          emAndamento: result.em_andamento ?? false,
+          cargaHoraria: result.carga_horaria?.toString() ?? "",
+          habilidadesDesenvolvidas: result.habilidades.map((habilidade) => habilidade.id),
           link: result.link,
-          imagens: result.imagens,
+          imagens: [],
         });
+        setImages(result?.imagens?.map((item) => ({
+          id: item.id,
+          url: item.imagem_url,
+        })) ?? []);
+        setInitialImages(result?.imagens?.map((item) => ({
+          id: item.id,
+          url: item.imagem_url,
+        })) ?? []);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no curso', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no curso',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }
@@ -177,7 +199,7 @@ export default function CadastroCurso() {
     if (!params.id) return;
     setIsSubmitting(true);
     try {
-      await deleteCurso(params.id);
+      await deleteCurso(Number(params.id));
       Toast.show({
         type: 'success',
         text1: 'Sucesso!',
@@ -192,13 +214,20 @@ export default function CadastroCurso() {
     }
   }
 
+  const onBackPress = () => {
+    router.push('/cursos');
+    return true;
+  };
+
   useFocusEffect(
     useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       gethabilidadesData();
-      params.id && getCursoByIdData(params.id);
+      params.id && getCursoByIdData(Number(params.id));
 
       return () => {
+        backHandler.remove();
         reset(defaultValuesCadatroCurso);
       };
     }, [params.id, reset])
@@ -213,9 +242,7 @@ export default function CadastroCurso() {
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
             title="Cadastrar curso"
-            onBack={() => {
-              router.push('/cursos')
-            }}
+            onBack={onBackPress}
             disabledAdd
             hasAdd={false}
             hasDelete
@@ -290,6 +317,7 @@ export default function CadastroCurso() {
               placeholder='Carga horária'
               className='mb-4'
               returnKeyType='next'
+              isLoading={isLoadingData}
             />
             <View className="flex flex-row items-center justify-between mb-4">
               <ControlledSelect
@@ -301,7 +329,7 @@ export default function CadastroCurso() {
                 options={optionsHabilidades}
                 isLoading={isLoadingData || isLoadingHabilidades}
               />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddHabilidade}>
+              <Pressable className={`w-1/4 flex items-center justify-center ${watch().habilidadeSelecionada ? '' : 'opacity-50'}`} onPress={onAddHabilidade} disabled={!watch().habilidadeSelecionada}>
                 <Ionicons name="add-circle" size={40} color="black" />
               </Pressable>
             </View>
@@ -328,8 +356,12 @@ export default function CadastroCurso() {
             />
             <ThemedText className='mb-2'>Upload de imagens</ThemedText>
             <MultiImageUploader
-              images={watch().imagens}
-              setImages={(images) => setValue('imagens', images)}
+              images={images}
+              setImages={(images) => setImages(images)}
+              callbackFiles={(images) => {
+                setValue('imagens', images)
+              }}
+              selectionLimit={4 - images.length}
             />
           </ScrollView>
           <CustomButton

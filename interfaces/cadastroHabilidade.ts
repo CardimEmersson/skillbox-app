@@ -6,7 +6,7 @@ export type TypeCursoProjeto = {
     tipo: "curso" | "projeto";
   };
 
-export type TypeProficiencia = "iniciante" | "intermediario" | "avancado";
+export type TypeProficiencia = "iniciante" | "intermediário" | "avançado";
 
 export interface CadastroHabilidadeDataForm {
   icone?: ImagePickerAsset;
@@ -41,5 +41,24 @@ export interface IGetHabilidade {
   categorias: {
     id: number;
     nome: string;
+  }[];
+  cursos: {
+    carga_horaria: number;
+    em_andamento: boolean;
+    id: number;
+    instructor: string;
+    link: string;
+    nome: string;
+    plataforma_instituicao: string;
+    prazo_conclusao: string;
+  }[];
+  projetos: {
+    descricao: string;
+    id: number;
+    link: string;
+    nome: string;
+    periodo_final: string;
+    periodo_inicial: string;
+    tipo_projeto: string;
   }[];
 }

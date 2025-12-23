@@ -1,11 +1,15 @@
-import { IApiPaginate, IParamsPaginate } from "@/interfaces/apiRequest";
-import { IGetCurso, IPostCurso } from "@/interfaces/cadastroCurso";
+import { IApiPaginate, IApiResponseDeleteSuccess, IApiResponseSuccess, IParamsPaginate } from "@/interfaces/apiRequest";
+import { IGetCurso } from "@/interfaces/cadastroCurso";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
 
-export async function postCurso(data: IPostCurso): Promise<boolean> {
+export async function postCurso(data: FormData): Promise<boolean> {
   try {
-    const responseData = await api.post<string>("/cursos", data).then((response) => response.data);
+    const responseData = await api.post<IApiResponseSuccess>("/cursos", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {
@@ -14,10 +18,14 @@ export async function postCurso(data: IPostCurso): Promise<boolean> {
   return false;
 }
 
-export async function putCurso(idCurso: string, data: IPostCurso): Promise<boolean> {
+export async function putCurso(idCurso: number, data: FormData): Promise<boolean> {
   if (!idCurso) throw new Error("Id do curso não informado");
   try {
-    const responseData = await api.put<string>(`/cursos/${idCurso}`, data).then((response) => response.data);
+    const responseData = await api.put<IApiResponseSuccess>(`/cursos/${idCurso}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {
@@ -39,7 +47,7 @@ export async function getCursos(params?: IParamsPaginate): Promise<IApiPaginate<
   return null;
 }
 
-export async function getCursoById(id: string): Promise<IGetCurso | null> {
+export async function getCursoById(id: number): Promise<IGetCurso | null> {
   if (!id) throw new Error("Id do curso não informado");
   try {
     const responseData = await api.get<IGetCurso>(`/cursos/${id}`).then((response) => response.data);
@@ -51,10 +59,10 @@ export async function getCursoById(id: string): Promise<IGetCurso | null> {
   return null;
 }
 
-export async function deleteCurso(id: string): Promise<IGetCurso | null> {
+export async function deleteCurso(id: number): Promise<IApiResponseDeleteSuccess | null> {
   if (!id) throw new Error("Id do curso não informado");
   try {
-    const responseData = await api.delete<IGetCurso>(`/cursos/${id}`).then((response) => response.data);
+    const responseData = await api.delete<IApiResponseDeleteSuccess>(`/cursos/${id}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

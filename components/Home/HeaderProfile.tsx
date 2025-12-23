@@ -1,5 +1,5 @@
-import { AuthContext } from "@/comtexts/authContext";
 import { sizes } from "@/constants/Sizes";
+import { AuthContext } from "@/contexts/authContext";
 import Feather from '@expo/vector-icons/Feather';
 import Ionicons from "@expo/vector-icons/Ionicons";
 

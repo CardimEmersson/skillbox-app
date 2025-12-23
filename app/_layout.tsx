@@ -6,7 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import "../global.css";
 
-import { AuthProvider } from "@/comtexts/authContext";
+import { AuthProvider } from "@/contexts/authContext";
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';

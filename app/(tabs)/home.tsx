@@ -2,11 +2,13 @@ import { HeaderProfile } from '@/components/Home/HeaderProfile';
 import { SectionCaixaHabilidades } from '@/components/Home/SectionCaixaHabilidades';
 import { SectionCategorias } from '@/components/Home/SectionCategorias';
 import { SectionCursos } from '@/components/Home/SectionCursos';
-import { AuthContext } from '@/comtexts/authContext';
+import { AuthContext } from '@/contexts/authContext';
+import { ICursosPopulares } from '@/interfaces/home';
+import { getCursosPopulares, getDashboard } from '@/services/modules/homeService';
+import { customToastError } from '@/utils/toast';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useContext, useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, Text, View } from "react-native";
-import Toast from 'react-native-toast-message';
 
 export type TypeCountData = {
   cursos: number;
@@ -16,7 +18,7 @@ export type TypeCountData = {
 }
 
 export default function Home() {
-  const {userAuth} = useContext(AuthContext);
+  const { userAuth } = useContext(AuthContext);
   const scrollViewRef = useRef<ScrollView>(null);
   const [countData, setCountData] = useState<TypeCountData>({
     cursos: 0,
@@ -24,40 +26,60 @@ export default function Home() {
     metas: 0,
     projetos: 0,
   });
+  const [cursosPopulares, setCursosPopulares] = useState<ICursosPopulares>();
   const [isLoadingCountData, setIsLoadingCountData] = useState(false);
+  const [isLoadingCursos, setIsLoadingCursos] = useState(false);
+
+  async function getCursosPopularesData() {
+    setIsLoadingCursos(true);
+    try {
+      const result = await getCursosPopulares();
+
+      if (result) {
+        setCursosPopulares(result);
+      }
+    } catch (error: any) {
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro no dashboard",
+      });
+    } finally {
+      setIsLoadingCursos(false);
+    }
+  }
 
   async function getCountData() {
     setIsLoadingCountData(true);
     try {
-      // const [cursos, habilidades, metas, projetos] = await Promise.all([
-      //   getCursos(userAuth?.id ?? ""),
-      //   getHabilidades(userAuth?.id ?? ""),
-      //   getMetas(userAuth?.id ?? ""),
-      //   getProjetos(userAuth?.id ?? "")
-      // ]);
 
-      // setCountData({
-      //   cursos: cursos?.length ?? 0,
-      //   habilidades: habilidades?.length ?? 0,
-      //   metas: metas?.length ?? 0,
-      //   projetos: projetos?.length ?? 0,
-      // });
+      const result = await getDashboard();
+      
+      setCountData({
+        cursos: result?.cursos ?? 0,
+        habilidades: result?.habilidades ?? 0,
+        metas: result?.metas ?? 0,
+        projetos: result?.projetos ?? 0,
+      });
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro no dashboard",
+      });
     } finally {
       setIsLoadingCountData(false);
     }
   }
 
   useFocusEffect(
-      useCallback(() => {  
-        getCountData();
-  
-        return () => {
-          scrollViewRef.current?.scrollTo({ y: 0, animated: false });
-        };
-      }, [])
-    );
+    useCallback(() => {
+      getCountData();
+      getCursosPopularesData();
+
+      return () => {
+        scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+      };
+    }, [])
+  );
 
   return (
     <SafeAreaView className="flex-1">
@@ -72,8 +94,8 @@ export default function Home() {
           <Text className="text-3xl font-inter-regular color-text">Olá, <Text className="font-bold">{`${userAuth?.nome ?? ""}!`}</Text></Text>
 
           <SectionCaixaHabilidades className='mt-10' countData={countData} isLoading={isLoadingCountData} />
-          <SectionCategorias className='mt-10' />
-          <SectionCursos className='mt-10' />
+          <SectionCategorias className='mt-10' isLoading={isLoadingCursos} />
+          <SectionCursos className='mt-10' isLoading={isLoadingCursos} cursosPopulares={cursosPopulares} />
 
         </View>
       </ScrollView>

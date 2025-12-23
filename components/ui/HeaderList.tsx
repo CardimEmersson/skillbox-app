@@ -24,7 +24,7 @@ export function HeaderList({ onPressAdd, title, onBack, disabledAdd, hasAdd = tr
       }}>
         <FontAwesome5 name="angle-left" size={32} color="black" />
       </Pressable>
-      <Text className="text-2xl font-inter-bold">{title}</Text>
+      <Text className="text-2xl text-center font-inter-bold">{title}</Text>
       {hasAdd && <Pressable onPress={onPressAdd} className={disabledAdd ? "opacity-0" : ""} disabled={disabledAdd}>
         <Ionicons name="add-circle" size={32} color="black" />
       </Pressable>}

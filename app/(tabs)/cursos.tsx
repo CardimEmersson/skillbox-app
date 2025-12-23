@@ -2,15 +2,14 @@ import { ListCard } from "@/components/Cursos/ListCard";
 import { ListCardSkeleton } from "@/components/MinhasHabilidades/ListCard.skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeaderList } from "@/components/ui/HeaderList";
-import { AuthContext } from "@/comtexts/authContext";
 import { getCursos } from "@/services/modules/cursoService";
+import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface ICursoListItem {
-  id: string;
+  id: number;
   name: string;
   institution: string;
   workload: string;
@@ -19,7 +18,6 @@ interface ICursoListItem {
 
 export default function Cursos() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [cursos, setCursos] = useState<ICursoListItem[]>([]);
@@ -27,21 +25,24 @@ export default function Cursos() {
   async function getCursosData() {
     setIsLoadingData(true);
     try {
-      const result = await getCursos(userAuth?.id ?? "");
+      const result = await getCursos();
 
-      const formatedItems: ICursoListItem[] = result?.map((item) => {
+      const formatedItems: ICursoListItem[] = result?.data?.map((item) => {
         return {
           id: item.id,
-          institution: item.plataformaInstituicao,
-          workload: item.cargaHoraria,
+          institution: item.plataforma_instituicao,
+          workload: item.carga_horaria,
           name: item.nome,
-          percentual: item.emAndamento ? 50 : 100,
+          percentual: item.em_andamento ? 50 : 100,
         }
       }) ?? [];
 
       setCursos(formatedItems);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no curso', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no curso',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }

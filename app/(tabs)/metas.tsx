@@ -2,15 +2,14 @@ import { ListCard } from "@/components/Metas/ListCard";
 import { ListCardSkeleton } from "@/components/MinhasHabilidades/ListCard.skeleton";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { HeaderList } from "@/components/ui/HeaderList";
-import { AuthContext } from "@/comtexts/authContext";
 import { getMetas } from "@/services/modules/metaService";
+import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
-import Toast from "react-native-toast-message";
 
 interface IMetaListItem {
-  id: string;
+  id: number;
   name: string;
   subtitle: string;
   percentual: number;
@@ -18,7 +17,7 @@ interface IMetaListItem {
 
 function formatPrazoConclusao(prazo: string, status: string): string {
   try {
-    const [day, month, year] = prazo.split('/').map(Number);
+    const [year, month, day] = prazo.split('-').map(Number);
     const date = new Date(year, month - 1, day);
 
     const formattedDate = new Intl.DateTimeFormat('pt-BR', {
@@ -35,7 +34,6 @@ function formatPrazoConclusao(prazo: string, status: string): string {
 
 export default function Metas() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [metas, setMetas] = useState<IMetaListItem[]>([]);
@@ -43,20 +41,23 @@ export default function Metas() {
   async function getMetasData() {
     setIsLoadingData(true);
     try {
-      const result = await getMetas(userAuth?.id ?? "");
+      const result = await getMetas();
 
-      const formatedItems: IMetaListItem[] = result?.map((item) => {
+      const formatedItems: IMetaListItem[] = result?.data?.map((item) => {
         return {
           id: item.id,
-          subtitle: formatPrazoConclusao(item.prazoConclusao, item.status),
-          name: item.titulo,
+          subtitle: formatPrazoConclusao(item.prazo_conclusao, item.status),
+          name: item.nome,
           percentual: item.status === 'concluído' ? 100 : item.status === 'em andamento' ? 50 : 10,
         }
       }) ?? [];
 
       setMetas(formatedItems);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na meta', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na meta',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }

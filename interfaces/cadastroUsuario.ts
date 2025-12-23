@@ -1,3 +1,4 @@
+import { ImagePickerAsset } from "expo-image-picker";
 
 export type TypeNivelFormacao = 'fundamental' | 'medio' | 'tecnico' | 'graduacao' | 'pos_graduacao' | 'mestrado' | 'doutorado';
 
@@ -12,12 +13,11 @@ export interface CadastroUsuarioDataForm {
   instituicao: string;
   objetivoProfissional: string;
   areaSelecionada?: string; 
-  areasUtilizadas: string[];
   bio: string;
   linkedin: string;
   github: string;
   site: string;
-  imagem: string;
+  imagem?: ImagePickerAsset;
 }
 
 export interface IPutUsuario {
@@ -43,21 +43,41 @@ export interface IPutUsuario {
 }
 
 export interface IGetUsuario {
-  dataNascimento: string; 
-  email: string; 
-  id: string; 
-  nome: string; 
-  senha: string; 
-  sobrenome: string; 
+  id: string;
+  nome: string;
+  sobrenome: string;
+  email: string;
   telefone: string;
-  areasUtilizadas: any[]; 
-  bio: string; 
-  github: string; 
-  imagem: string; 
+  dataNascimento: string;
+  bio: string;
+  localizacao: string;
+  nivel_formacao: string;
   instituicao: string;
+  objetivo_profissional: string;
+  area_interesse: string;
+  linkedin: string;
+  github: string;
+  site: string;
+  avatar: string;
+}
+
+export interface IPutUsuarioResponse {
+  area_interesse: string; 
+  avatar_url: string; 
+  bio: string; 
+  created_at: string; 
+  dataNascimento: string; 
+  deleted_at: string | null; 
+  email: string; 
+  github: string; 
+  instituicao: string; 
   linkedin: string; 
   localizacao: string; 
-  nivelFormacao: string; 
-  objetivoProfissional: string; 
-  site: string;
+  nivel_formacao: string; 
+  nome: string; 
+  objetivo_profissional: string;
+  site: string; 
+  sobrenome: string; 
+  telefone: string; 
+  updated_at: string;
 }

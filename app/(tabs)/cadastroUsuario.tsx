@@ -1,18 +1,19 @@
-import { ControlledAutocomplete } from "@/components/ControlledAutocomplete";
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
-import { BadgeClose, CustomButton, HeaderList, SelectOption } from "@/components/ui";
+import { CustomButton, HeaderList, SelectOption } from "@/components/ui";
 import { ImageUploader } from "@/components/ui/ImageUploader";
-import { AuthContext } from "@/comtexts/authContext";
+import { AuthContext } from "@/contexts/authContext";
 import { UsuarioSchema } from "@/data/shemas/usuarioSchema";
-import { CadastroUsuarioDataForm, IPutUsuario, TypeNivelFormacao } from "@/interfaces/cadastroUsuario";
-import { getUsuarioById, putUsuario } from "@/services/modules/usuarioService";
+import { CadastroUsuarioDataForm, TypeNivelFormacao } from "@/interfaces/cadastroUsuario";
+import { getUsuarioAuth, putUsuario } from "@/services/modules/usuarioService";
+import { convertDateToIso, convertIsoToDate } from "@/utils/date";
+import { customToastError } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useContext, useMemo, useRef, useState } from "react";
+import { useCallback, useContext, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const optionsNivelFormacao: SelectOption[] = [
@@ -35,6 +36,9 @@ const initialOptionsAreas: SelectOption[] = [
   { label: 'Comunicação', value: 'comunicacao' },
   { label: 'Finanças', value: 'financas' },
   { label: 'Artes', value: 'artes' },
+  { label: 'Negócios & Produto', value: 'negocios_produto' },
+  { label: 'Recursos Humanos', value: 'recursos_humanos' },
+  { label: 'Desenvolvimento Pessoal', value: 'desenvolvimento_pessoal' },
 ];
 
 const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
@@ -48,20 +52,17 @@ const defaultValuesCadastroUsuario: CadastroUsuarioDataForm = {
   instituicao: "",
   objetivoProfissional: "",
   areaSelecionada: undefined,
-  areasUtilizadas: [],
   bio: "",
   linkedin: "",
   github: "",
   site: "",
-  imagem: "",
+  imagem: undefined,
 }
 
 export default function CadastroUsuario() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
+  const { userAuth, handleUserAuth } = useContext(AuthContext);
   const [image, setImage] = useState<string | null>("");
-  const [optionsAreas, setOptionsAreas] = useState<SelectOption[]>(initialOptionsAreas);
-  const [inputValueArea, setInputValueArea] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -78,8 +79,6 @@ export default function CadastroUsuario() {
 
   const {
     control,
-    watch,
-    getValues,
     setValue,
     reset,
     handleSubmit
@@ -87,53 +86,6 @@ export default function CadastroUsuario() {
     defaultValues: defaultValuesCadastroUsuario,
     resolver: yupResolver(UsuarioSchema) as any,
   });
-
-  const areasUtilizadasNomes = useMemo(() => {
-    return getValues().areasUtilizadas.map(areaValue => {
-      const foundArea = optionsAreas.find(option => option.value === areaValue);
-      return foundArea ? foundArea.label : '';
-    }).filter(Boolean);
-  }, [watch('areasUtilizadas'), optionsAreas]);
-
-  function handleAddNovaArea(novaArea: string) {
-    const findedArea = optionsAreas?.find((area) => area.label.toLowerCase() === novaArea.toLowerCase())
-    if (findedArea) return findedArea;
-
-    const novaOpcao: SelectOption = {
-      label: novaArea,
-      value: novaArea.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
-    };
-
-    setOptionsAreas(prev => [...prev, novaOpcao]);
-    return novaOpcao;
-  }
-
-  function onAddArea() {
-    if (watch().areaSelecionada) {
-      const areaSelecionada: string = getValues().areaSelecionada ?? "";
-      const findedArea = getValues().areasUtilizadas.find((categoria) => categoria === watch().areaSelecionada);
-
-      if (!findedArea) {
-        setValue("areasUtilizadas", [...getValues().areasUtilizadas, areaSelecionada], {
-          shouldDirty: true,
-          shouldValidate: true,
-        });
-      }
-      setInputValueArea('');
-    }
-    setValue("areaSelecionada", undefined, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  }
-
-  function onRemoveArea(area: string) {
-    const filteredAreas = getValues().areasUtilizadas.filter((item) => item !== area);
-    setValue("areasUtilizadas", filteredAreas, {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  }
 
   function focusInput(nameInput: string) {
     switch (nameInput) {
@@ -169,33 +121,37 @@ export default function CadastroUsuario() {
     }
   }
 
-  async function getUsuarioByIdData(idUsuario: string) {
+  async function getUsuarioData() {
     setIsLoadingData(true);
     try {
-      const result = await getUsuarioById(idUsuario);
+      const result = await getUsuarioAuth();
 
       if (result) {
         reset({
           ...defaultValuesCadastroUsuario,
           nome: result.nome ?? "",
           sobrenome: result.sobrenome ?? "",
-          dataNascimento: result.dataNascimento ?? "",
+          dataNascimento: convertIsoToDate(result.dataNascimento),
           email: result.email ?? "",
           telefone: result.telefone ?? "",
-          areasUtilizadas: result.areasUtilizadas ?? [],
+          areaSelecionada: result.area_interesse ?? "",
           bio: result.bio ?? "",
           github: result.github ?? "",
-          imagem: result.imagem ?? "",
+          imagem: undefined,
           instituicao: result.instituicao ?? "",
           linkedin: result.linkedin ?? "",
           localizacao: result.localizacao ?? "",
-          nivelFormacao: result.nivelFormacao as TypeNivelFormacao ?? "fundamental",
-          objetivoProfissional: result.objetivoProfissional ?? "",
+          nivelFormacao: result.nivel_formacao as TypeNivelFormacao ?? "fundamental",
+          objetivoProfissional: result.objetivo_profissional ?? "",
           site: result.site ?? ""
         });
+        setImage(result.avatar ?? "");
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no usuario', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no usuario',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }
@@ -204,29 +160,43 @@ export default function CadastroUsuario() {
   async function handleSubmitUsuario(data: CadastroUsuarioDataForm) {
     setIsSubmitting(true);
     try {
+      const formDataUsuario = new FormData();
+      formDataUsuario.append('nome', data.nome);
+      formDataUsuario.append('sobrenome', data.sobrenome);
+      formDataUsuario.append('email', data.email);
+      formDataUsuario.append('telefone', data.telefone);
+      formDataUsuario.append('dataNascimento', convertDateToIso(data.dataNascimento));
+      if (data.imagem) {
+        formDataUsuario.append('avatar', {
+          uri: data.imagem.uri,
+          name: data.imagem.fileName ?? data.imagem.uri.split('/').pop() ?? 'icone.jpg',
+          type: (data.imagem as any).mimeType ?? 'image/jpeg',
+        } as any);
+      }
+      formDataUsuario.append('bio', data.bio);
+      formDataUsuario.append('localizacao', data.localizacao);
+      formDataUsuario.append('nivel_formacao', data.nivelFormacao);
+      formDataUsuario.append('instituicao', data.instituicao);
+      formDataUsuario.append('objetivo_profissional', data.objetivoProfissional);
+      formDataUsuario.append('area_interesse', data.areaSelecionada ?? "");
+      formDataUsuario.append('linkedin', data.linkedin);
+      formDataUsuario.append('github', data.github);
+      formDataUsuario.append('site', data.site);
 
-      const putData: IPutUsuario = {
-        nome: data.nome,
-        sobrenome: data.sobrenome,
-        areasUtilizadas: [],
-        bio: data.bio,
-        dataNascimento: data.dataNascimento,
-        email: data.email,
-        github: data.github,
-        imagem: "",
-        instituicao: data.instituicao,
-        linkedin: data.linkedin,
-        localizacao: data.localizacao,
-        nivelFormacao: data.nivelFormacao,
-        objetivoProfissional: data.objetivoProfissional,
-        site: data.site,
-        telefone: data.telefone,
-        senha: userAuth?.senha ?? "",
-      };
-
-      const result = await putUsuario(userAuth?.id ?? "", putData);
+      const result = await putUsuario(formDataUsuario);
 
       if (result) {
+        handleUserAuth({
+          nome: data.nome,
+          sobrenome: data.sobrenome,
+          email: data.email,
+          telefone: data.telefone,
+          dataNascimento: result.dataNascimento,
+          imagem: result.avatar_url,
+          bio: data.bio,
+          id: userAuth?.id ?? 0, 
+          token: userAuth?.token ?? "",
+        });
         Toast.show({
           type: 'success',
           text1: 'Sucesso!',
@@ -235,17 +205,28 @@ export default function CadastroUsuario() {
         setTimeout(() => router.push('/usuario'), 300);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro no projeto",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
+   const onBackPress = () => {
+    router.push('/usuario');
+    return true;
+  };
+
   useFocusEffect(
     useCallback(() => {
-      getUsuarioByIdData(userAuth?.id ?? "");
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      getUsuarioData();
 
       return () => {
+        backHandler.remove();
         reset(defaultValuesCadastroUsuario);
         scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       };
@@ -264,14 +245,30 @@ export default function CadastroUsuario() {
               //
             }}
             title="Perfil"
-            onBack={() => {
-              router.push('/usuario')
-            }}
+            onBack={onBackPress}
             disabledAdd
           />
           <ScrollView ref={scrollViewRef} className="mt-4" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20, paddingTop: 4, paddingHorizontal: 4 }} keyboardShouldPersistTaps="handled">
             <View className="w-full items-center mb-6 mt-6">
-              <ImageUploader image={image} setImage={setImage} />
+              <ImageUploader image={image} setImage={setImage} callbackFile={(image) => {
+                setValue("imagem", image, {
+                  shouldDirty: true,
+                  shouldValidate: true,
+                });
+              }}
+              />
+              {!!image && (
+                <Pressable onPress={() => {
+                  setImage(null);
+                  setValue("imagem", undefined, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }} className="flex flex-row items-center mt-2">
+                  <Ionicons name="trash-outline" size={16} color="red" />
+                  <Text className="text-red-500 ml-1">Remover imagem</Text>
+                </Pressable>
+              )}
             </View>
 
             <Text className="text-xl font-inter-bold mb-6 color-text">Informações pessoais</Text>
@@ -380,34 +377,16 @@ export default function CadastroUsuario() {
                 textAlignVertical="top"
                 isLoading={isLoadingData}
               />
-              <View className="flex flex-row items-center justify-between mb-4 w-full">
-                <ControlledAutocomplete
-                  control={control}
-                  label='Área de interesse'
-                  name='areaSelecionada'
-                  placeholder='Área'
-                  className='w-3/4'
-                  options={optionsAreas}
-                  onAddOption={handleAddNovaArea}
-                  handleInputValue={setInputValueArea}
-                  inputValue={inputValueArea}
-                  isLoading={isLoadingData}
-                />
-                <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddArea}>
-                  <Ionicons name="add-circle" size={40} color="black" />
-                </Pressable>
-              </View>
-              <View className="flex flex-row w-full flex-wrap">
-                {watch('areasUtilizadas')?.map((areaValue, index) => (
-                  <BadgeClose
-                    key={`${areaValue}-${index}`}
-                    name={areasUtilizadasNomes[index]}
-                    onPress={() => {
-                      onRemoveArea(areaValue);
-                    }}
-                  />
-                ))}
-              </View>
+              <ControlledSelect
+                control={control}
+                label='Área de interesse'
+                name='areaSelecionada'
+                placeholder='Área'
+                className='mb-4'
+                returnKeyType='next'
+                options={initialOptionsAreas}
+                isLoading={isLoadingData}
+              />
               <ControlledInput
                 control={control}
                 label='Bio / sobre você'

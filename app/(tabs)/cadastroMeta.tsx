@@ -1,17 +1,18 @@
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
 import { BadgeClose, ConfirmationModal, CustomButton, HeaderList, SelectOption } from "@/components/ui";
-import { AuthContext } from "@/comtexts/authContext";
 import { MetaSchema } from "@/data/shemas/metaSchema";
 import { CadastroMetaDataForm, IPostMeta, TypeStatusMeta } from "@/interfaces/cadastroMeta";
 import { getHabilidades } from "@/services/modules/habilidadeService";
 import { deleteMeta, getMetaById, postMeta, putMeta } from "@/services/modules/metaService";
+import { convertDateToIso, convertIsoToDate } from "@/utils/date";
+import { customToastError } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useContext, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, TextInput, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, TextInput, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 const optionsStatus: SelectOption[] = [
@@ -38,7 +39,6 @@ export default function CadastroMeta() {
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const params = useLocalSearchParams<{ id?: string }>();
-  const { userAuth } = useContext(AuthContext);
 
   const {
     control,
@@ -54,7 +54,7 @@ export default function CadastroMeta() {
 
   function onAddHabilidade() {
     if (watch().habilidadeSelecionada) {
-      const habilidadeSelecionada: string = getValues().habilidadeSelecionada ?? "";
+      const habilidadeSelecionada: number = getValues().habilidadeSelecionada ?? 0;
       const findedHabilidade = getValues().habilidadesRelacionadas.find((habilidade) => habilidade === watch().habilidadeSelecionada);
 
       if (!findedHabilidade) {
@@ -70,7 +70,7 @@ export default function CadastroMeta() {
     });
   }
 
-  function onRemoveHabilidade(habilidade: string) {
+  function onRemoveHabilidade(habilidade: number) {
     const filteredCategorias = getValues().habilidadesRelacionadas.filter((item) => item !== habilidade);
     setValue("habilidadesRelacionadas", filteredCategorias, {
       shouldDirty: true,
@@ -81,34 +81,17 @@ export default function CadastroMeta() {
   async function handleSubmitMeta(data: CadastroMetaDataForm) {
     setIsSubmitting(true);
     try {
-      const habilidadesRelacionadas: {
-        nome: string;
-        id: string;
-      }[] = [];
-
-      data.habilidadesRelacionadas?.forEach((item) => {
-        const findedHabilidade = optionsHabilidades?.find((option) => option.value === item);
-
-        if (findedHabilidade) {
-          habilidadesRelacionadas.push({
-            nome: findedHabilidade.label,
-            id: findedHabilidade.value
-          })
-        }
-      });
-
       const postData: IPostMeta = {
-        titulo: data.titulo,
+        nome: data.titulo,
         descricao: data.descricao,
-        habilidadesRelacionadas,
-        prazoConclusao: data.prazoConclusao,
+        habilidades: data.habilidadesRelacionadas?.map((habilidade) => habilidade?.toString()),
+        prazo_conclusao: convertDateToIso(data.prazoConclusao),
         status: data.status,
-        idUser: userAuth?.id ?? "",
       }
 
       let result;
       if (params?.id) {
-        result = await putMeta(params.id, postData);
+        result = await putMeta(Number(params.id), postData);
       } else {
         result = await postMeta(postData);
       }
@@ -122,27 +105,33 @@ export default function CadastroMeta() {
         setTimeout(() => router.push('/metas'), 300);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na meta', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na meta',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function getMetaByIdData(idMeta: string) {
+  async function getMetaByIdData(idMeta: number) {
     setIsLoadingData(true);
     try {
       const result = await getMetaById(idMeta);
       if (result) {
         reset({
           descricao: result.descricao,
-          habilidadesRelacionadas: result.habilidadesRelacionadas.map((habilidade) => habilidade.id),
-          prazoConclusao: result.prazoConclusao,
+          habilidadesRelacionadas: result.habilidades?.map((habilidade) => habilidade.id),
+          prazoConclusao: convertIsoToDate(result.prazo_conclusao),
           status: result.status as TypeStatusMeta,
-          titulo: result.titulo,
+          titulo: result.nome,
         });
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na meta', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na meta',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }
@@ -151,9 +140,11 @@ export default function CadastroMeta() {
   async function gethabilidadesData() {
     setIsLoadingHabilidades(true);
     try {
-      const result = await getHabilidades(userAuth?.id ?? "");
+      const result = await getHabilidades({
+        limit: 9999
+      });
 
-      const formatedItems: SelectOption[] = result?.map((item) => {
+      const formatedItems: SelectOption[] = result?.data.map((item) => {
         return {
           value: item.id,
           label: item.nome
@@ -162,7 +153,10 @@ export default function CadastroMeta() {
 
       setOptionsHabilidades(formatedItems);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na habilidade',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingHabilidades(false);
     }
@@ -172,7 +166,7 @@ export default function CadastroMeta() {
     if (!params.id) return;
     setIsSubmitting(true);
     try {
-      await deleteMeta(params.id);
+      await deleteMeta(Number(params.id));
       Toast.show({
         type: 'success',
         text1: 'Sucesso!',
@@ -187,13 +181,20 @@ export default function CadastroMeta() {
     }
   }
 
+  const onBackPress = () => {
+    router.push('/metas');
+    return true;
+  };
+
   useFocusEffect(
     useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       gethabilidadesData();
-      params.id && getMetaByIdData(params.id);
+      params.id && getMetaByIdData(Number(params.id));
 
       return () => {
+        backHandler.remove();
         reset(defaultValuesCadatroMeta);
       };
     }, [params.id, reset])
@@ -208,9 +209,7 @@ export default function CadastroMeta() {
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
             title="Cadastrar meta"
-            onBack={() => {
-              router.push('/metas')
-            }}
+            onBack={onBackPress}
             disabledAdd
             hasAdd={false}
             hasDelete
@@ -254,7 +253,7 @@ export default function CadastroMeta() {
                 options={optionsHabilidades}
                 isLoading={isLoadingHabilidades || isLoadingData}
               />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddHabilidade}>
+              <Pressable className={`w-1/4 flex items-center justify-center ${watch().habilidadeSelecionada ? '' : 'opacity-50'}`} onPress={onAddHabilidade} disabled={!watch().habilidadeSelecionada}>
                 <Ionicons name="add-circle" size={40} color="black" />
               </Pressable>
             </View>

@@ -2,19 +2,21 @@ import { ControlledDateRangeInput } from "@/components/ControlledDateRangeInput"
 import { ControlledInput } from "@/components/ControlledInput";
 import { ControlledSelect } from "@/components/ControlledSelect";
 import { ThemedText } from "@/components/ThemedText";
-import { BadgeClose, BadgetCloseGradient, ConfirmationModal, CustomButton, HeaderList, MultiImageUploader, SelectOption } from "@/components/ui";
-import { AuthContext } from "@/comtexts/authContext";
+import { BadgeClose, BadgetCloseGradient, ConfirmationModal, CustomButton, HeaderList, MultiImageUploader, SelectOption, TypeImage } from "@/components/ui";
 import { Colors } from "@/constants/Colors";
 import { ProjetoSchema } from "@/data/shemas/projetoSchema";
-import { CadastroProjetoDataForm, IPostProjeto } from "@/interfaces/cadastroProjeto";
+import { CadastroProjetoDataForm } from "@/interfaces/cadastroProjeto";
+import { getCursos } from "@/services/modules/cursoService";
 import { getHabilidades } from "@/services/modules/habilidadeService";
 import { deleteProjeto, getProjetoById, postProjeto, putProjeto } from "@/services/modules/projetoService";
+import { convertDateToIso, convertIsoToDate } from "@/utils/date";
+import { customToastError } from "@/utils/toast";
 import { Ionicons } from "@expo/vector-icons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useContext, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { SelectionOptionCursoProjeto } from "./cadastroHabilidade";
 
@@ -26,13 +28,6 @@ const optionsTipoProjeto: SelectOption[] = [
   { label: 'Academico', value: 'academico' },
   { label: 'Criativo', value: 'criativo' },
   { label: 'Open source', value: 'open_source' },
-];
-
-const optionsCursos: SelectionOptionCursoProjeto[] = [
-  { label: 'Curso 01', value: 1, tipo: 'curso' },
-  { label: 'Curso 02', value: 2, tipo: 'curso' },
-  { label: 'Curso 03', value: 3, tipo: 'curso' },
-  { label: 'Curso 04', value: 4, tipo: 'curso' },
 ];
 
 const defaultValuesCadatroProjeto: CadastroProjetoDataForm = {
@@ -52,11 +47,13 @@ export default function CadastroProjeto() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoadingHabilidades, setIsLoadingHabilidades] = useState(false);
+  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [optionsHabilidades, setOptionsHabilidades] = useState<SelectOption[]>([]);
+  const [optionsCursos, setOptionsCursos] = useState<SelectionOptionCursoProjeto[]>([]);
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
-  const { userAuth } = useContext(AuthContext);
+  const [images, setImages] = useState<TypeImage[]>([]);
+  const [initialImages, setInitialImages] = useState<TypeImage[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const {
@@ -73,7 +70,7 @@ export default function CadastroProjeto() {
 
   function onAddHabilidade() {
     if (watch().habilidadeSelecionada) {
-      const habilidadeSelecionada: string = getValues().habilidadeSelecionada ?? "";
+      const habilidadeSelecionada: number = getValues().habilidadeSelecionada ?? 0;
       const findedHabilidade = getValues().habilidadesUtilizadas.find((habilidade) => habilidade === watch().habilidadeSelecionada);
 
       if (!findedHabilidade) {
@@ -89,7 +86,7 @@ export default function CadastroProjeto() {
     });
   }
 
-  function onRemoveHabilidade(habilidade: string) {
+  function onRemoveHabilidade(habilidade: number) {
     const filteredCategorias = getValues().habilidadesUtilizadas.filter((item) => item !== habilidade);
     setValue("habilidadesUtilizadas", filteredCategorias, {
       shouldDirty: true,
@@ -136,7 +133,7 @@ export default function CadastroProjeto() {
     if (!params.id) return;
     setIsSubmitting(true);
     try {
-      await deleteProjeto(params.id);
+      await deleteProjeto(Number(params.id));
       Toast.show({
         type: 'success',
         text1: 'Sucesso!',
@@ -145,6 +142,10 @@ export default function CadastroProjeto() {
       setTimeout(() => router.push('/projetos'), 300);
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro ao excluir', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro ao excluir',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
       setIsDeleteModalVisible(false);
@@ -154,40 +155,45 @@ export default function CadastroProjeto() {
   async function handleSubmitProjeto(data: CadastroProjetoDataForm) {
     setIsSubmitting(true);
     try {
-      const habilidadesUtilizadas: {
-        nome: string;
-        id: string;
-      }[] = [];
-
-      data.habilidadesUtilizadas?.forEach((item) => {
-        const findedHabilidade = optionsHabilidades?.find((option) => option.value === item);
-
-        if (findedHabilidade) {
-          habilidadesUtilizadas.push({
-            nome: findedHabilidade.label,
-            id: findedHabilidade.value
-          })
+      const excluir_imagens_ids: number[] = [];
+      initialImages?.forEach((item) => {
+        if (!images.some((image) => image.id === item.id)) {
+          item.id && excluir_imagens_ids.push(item.id);
         }
       });
 
-      const postData: IPostProjeto = {
-        nome: data.nome,
-        periodo: data.periodo,
-        cursos: [],
-        descricao: data.descricao,
-        habilidadesUtilizadas,
-        idUser: userAuth?.id ?? "",
-        link: data.link,
-        tipoProjeto: data.tipoProjeto,
-        imagens: data.imagens,
-      };
+      const [periodoInicial, periodoFinal] = data.periodo.split(' - ');
+
+      const formDataProjeto = new FormData();
+      formDataProjeto.append('nome', data.nome);
+      periodoInicial && formDataProjeto.append('periodo_inicial', convertDateToIso(periodoInicial ?? ""));
+      periodoFinal && formDataProjeto.append('periodo_final', convertDateToIso(periodoFinal ?? ""));
+      formDataProjeto.append('tipo_projeto', data.tipoProjeto);
+      formDataProjeto.append('descricao', data.descricao);
+      formDataProjeto.append('link', data.link);
+      data.imagens?.forEach((item) => {
+        formDataProjeto.append('imagens', {
+          uri: item.uri,
+          name: item.fileName ?? item.uri.split('/').pop() ?? 'imagem.jpg',
+          type: (item as any).mimeType ?? 'image/jpeg',
+        } as any);
+      });
+      data.cursos?.forEach((item) => {
+        formDataProjeto.append('cursos[]', item.id.toString());
+      });
+      data.habilidadesUtilizadas?.forEach((item) => {
+        formDataProjeto.append('habilidades[]', item.toString());
+      });
+      excluir_imagens_ids?.forEach((item) => {
+        formDataProjeto.append('excluir_imagens_ids[]', item.toString());
+      });
 
       let result;
 
       if (params?.id) {
-        result = await putProjeto(params.id, postData);
+        result = await putProjeto(Number(params.id), formDataProjeto);
       } else {
-        result = await postProjeto(postData);
+        result = await postProjeto(formDataProjeto);
       }
 
       if (result) {
@@ -199,62 +205,106 @@ export default function CadastroProjeto() {
         setTimeout(() => router.push('/projetos'), 300);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no projeto',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  async function gethabilidadesData() {
-    setIsLoadingHabilidades(true);
+  async function getOptionsData() {
+    setIsLoadingOptions(true);
     try {
-      const result = await getHabilidades(userAuth?.id ?? "");
+      const [habilidades, cursos] = await Promise.all([getHabilidades({
+        limit: 9999
+      }), getCursos({
+        limit: 9999
+      })]);
 
-      const formatedItems: SelectOption[] = result?.map((item) => {
+      const formatedItemsHabilidades: SelectOption[] = habilidades?.data?.map((item) => {
         return {
           value: item.id,
           label: item.nome
         }
       }) ?? [];
+     
+      const formatedItemsCursos: SelectionOptionCursoProjeto[] = cursos?.data?.map((item) => {
+        return {
+          value: item.id,
+          label: item.nome,
+          tipo: 'curso'
+        }
+      }) ?? [];
 
-      setOptionsHabilidades(formatedItems);
+      setOptionsHabilidades(formatedItemsHabilidades);
+      setOptionsCursos(formatedItemsCursos);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na habilidade - cursos',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
-      setIsLoadingHabilidades(false);
+      setIsLoadingOptions(false);
     }
   }
 
-  async function getProjetoByIdData(idProjeto: string) {
+  async function getProjetoByIdData(idProjeto: number) {
     setIsLoadingData(true);
     try {
       const result = await getProjetoById(idProjeto);
       if (result) {
+
+        const periodo = `${convertIsoToDate(result.periodo_inicial)} - ${convertIsoToDate(result.periodo_final)}`;
+
         reset({
           nome: result.nome,
-          periodo: result.periodo,
-          tipoProjeto: result.tipoProjeto,
+          periodo: periodo,
+          tipoProjeto: result.tipo_projeto,
           descricao: result.descricao,
           link: result.link,
           imagens: [],
-          cursos: [],
-          habilidadesUtilizadas: result.habilidadesUtilizadas?.map((item) => item.id) ?? [],
+          cursos: result.cursos?.map((item) => ({
+            id: item.curso_id,
+            descricao: item.nome,
+            tipo: 'curso'
+          })) ?? [],
+          habilidadesUtilizadas: result.habilidades?.map((item) => item.habilidade_id) ?? [],
         });
+        setImages(result?.imagens?.map((item) => ({
+          id: item.id,
+          url: item.imagem_url,
+        })) ?? []);
+        setInitialImages(result?.imagens?.map((item) => ({
+          id: item.id,
+          url: item.imagem_url,
+        })) ?? []);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no projeto', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no projeto',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }
   }
 
+  const onBackPress = () => {
+    router.push('/projetos');
+    return true;
+  };
+
   useFocusEffect(
     useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
-      gethabilidadesData();
-      params.id && getProjetoByIdData(params.id);
+      getOptionsData();
+      params.id && getProjetoByIdData(Number(params.id));
 
       return () => {
+        backHandler.remove();
         reset(defaultValuesCadatroProjeto);
         scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       };
@@ -270,9 +320,7 @@ export default function CadastroProjeto() {
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
             title="Cadastrar projeto"
-            onBack={() => {
-              router.push('/projetos')
-            }}
+            onBack={onBackPress}
             disabledAdd
             hasAdd={false}
             hasDelete
@@ -309,9 +357,9 @@ export default function CadastroProjeto() {
                 placeholder='Habilidade'
                 className='w-4/5'
                 options={optionsHabilidades}
-                isLoading={isLoadingHabilidades || isLoadingData}
+                isLoading={isLoadingOptions || isLoadingData}
               />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddHabilidade}>
+              <Pressable className={`w-1/4 flex items-center justify-center ${watch().habilidadeSelecionada ? '' : 'opacity-50'}`} onPress={onAddHabilidade} disabled={!watch().habilidadeSelecionada}>
                 <Ionicons name="add-circle" size={40} color="black" />
               </Pressable>
             </View>
@@ -366,9 +414,9 @@ export default function CadastroProjeto() {
                 placeholder='Curso'
                 className='w-3/4'
                 options={optionsCursos}
-                isLoading={isLoadingData}
+                isLoading={isLoadingData || isLoadingOptions}
               />
-              <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCursos}>
+              <Pressable className={`w-1/4 flex items-center justify-center ${watch().cursoSelecionado ? '' : 'opacity-50'}`} disabled={!watch().cursoSelecionado} onPress={onAddCursos}>
                 <Ionicons name="add-circle" size={40} color="black" />
               </Pressable>
             </View>
@@ -386,8 +434,12 @@ export default function CadastroProjeto() {
             </View>
             <ThemedText className='mb-2'>Imagens do projeto</ThemedText>
             <MultiImageUploader
-              images={watch().imagens}
-              setImages={(images) => setValue('imagens', images)}
+              images={images}
+              setImages={(images) => setImages(images)}
+              callbackFiles={(images) => {
+                setValue('imagens', images)
+              }}
+              selectionLimit={4 - images.length}
             />
           </ScrollView>
           <CustomButton

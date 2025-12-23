@@ -8,8 +8,9 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUploader } from "@/components/ui/ImageUploader";
 import { SkillboxItem, SkillboxItemSkeleton, TypeColorsSkillbox } from "@/components/ui/SkillboxItem";
 import { PerfilCompartilhavel } from "@/components/Usuarios/PerfilCompartilhavel";
-import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
+import { AuthContext } from "@/contexts/authContext";
+import { IParamsPaginate } from "@/interfaces/apiRequest";
 import { IGetCurso } from "@/interfaces/cadastroCurso";
 import { IGetHabilidade } from "@/interfaces/cadastroHabilidade";
 import { IGetMeta } from "@/interfaces/cadastroMeta";
@@ -18,6 +19,8 @@ import { getCursos } from "@/services/modules/cursoService";
 import { getHabilidades } from "@/services/modules/habilidadeService";
 import { getMetas } from "@/services/modules/metaService";
 import { getProjetos } from "@/services/modules/projetoService";
+import { getUsuarioAuth } from "@/services/modules/usuarioService";
+import { customToastError } from "@/utils/toast";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Sharing from 'expo-sharing';
@@ -30,10 +33,15 @@ export const colorsSkillbox: TypeColorsSkillbox[] = ["green", "orange", "blue", 
 
 export default function Usuario() {
   const router = useRouter();
-  const { userAuth } = useContext(AuthContext);
-  const [image, setImage] = useState<string | null>(userAuth?.imagem ?? "");
+  const { userAuth, handleUserAuth } = useContext(AuthContext);
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [usuario, setUsuario] = useState<{
+    nome: string;
+    bio: string;
+    avatar: string;
+  }>();
+  const [isLoadingUsuario, setIsLoadingUsuario] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
   const [cursos, setCursos] = useState<IGetCurso[]>([]);
   const [projetos, setProjetos] = useState<IGetProjeto[]>([]);
@@ -45,19 +53,46 @@ export default function Usuario() {
   const [showAllProjetos] = useState(false);
   const [showAllMetas] = useState(false);
 
-  async function getInfoData(idUsuario: string) {
+  async function getUsuarioData() {
+    setIsLoadingUsuario(true);
+    try {
+      const result = await getUsuarioAuth();
+
+      if (result) {
+        setUsuario({
+          nome: result.nome ?? "",
+          bio: result.bio ?? "",
+          avatar: result.avatar ?? ""
+        });
+      }
+    } catch (error: any) {
+      customToastError({
+        text1: 'Erro na busca do usuario',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsLoadingUsuario(false);
+    }
+  }
+
+  async function getInfoData() {
     setIsLoadingData(true);
     try {
-      const params = "&_page=1&_limit=10";
+      const params: IParamsPaginate = {
+        limit: 10
+      };
 
-      const [cursosData, projetosData, habilidadesData, metasData] = await Promise.all([getCursos(idUsuario, params), getProjetos(idUsuario, params), getHabilidades(idUsuario, ""), getMetas(idUsuario, params)]);
+      const [cursosData, projetosData, habilidadesData, metasData] = await Promise.all([getCursos(params), getProjetos(params), getHabilidades(), getMetas(params)]);
 
-      setCursos(cursosData ?? []);
-      setProjetos(projetosData ?? []);
-      setHabilidades(habilidadesData ?? []);
-      setMetas(metasData ?? []);
+      setCursos(cursosData?.data ?? []);
+      setProjetos(projetosData?.data ?? []);
+      setHabilidades(habilidadesData?.data ?? []);
+      setMetas(metasData?.data ?? []);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na busca das informações', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro na busca das informações',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsLoadingData(false);
     }
@@ -94,7 +129,8 @@ export default function Usuario() {
 
   useFocusEffect(
     useCallback(() => {
-      getInfoData(userAuth?.id ?? "");
+      getInfoData();
+      getUsuarioData();
 
       return () => {
         scrollViewRef.current?.scrollTo({ y: 0, animated: false });
@@ -124,9 +160,21 @@ export default function Usuario() {
               <AntDesign name="logout" size={25} />
             </Pressable>
           </View>
-          <ImageUploader image={image} setImage={setImage} disabled />
-          <Text className="text-2xl font-inter-bold">{userAuth?.nome ?? ""}</Text>
-          <Text className="text-xl font-inter-light text-center">{userAuth?.bio ?? ""}</Text>
+          <ImageUploader image={usuario?.avatar ?? ""} setImage={() => {
+            //
+          }} disabled />
+          {isLoadingUsuario ? (
+            <>
+              <View className='h-8 w-1/2 bg-zinc-300 rounded' />
+              <View className='h-5 w-[30%] bg-zinc-300 rounded mt-1' />
+              <View className='h-5 w-[40%] bg-zinc-300 rounded mt-1' />
+            </>
+          ) : (
+            <>
+              <Text className="text-2xl font-inter-bold">{usuario?.nome ?? ""}</Text>
+              <Text className="text-xl font-inter-light text-center">{usuario?.bio ?? ""}</Text>
+            </>
+          )}
         </View>
 
         <View className="w-full flex flex-row justify-between mt-10">
@@ -161,7 +209,7 @@ export default function Usuario() {
             displayedHabilidades.map((item, index) => (
               <SkillboxItem
                 key={item.id}
-                title={item.proficiencia}
+                title={item.nome}
                 value={item.nome}
                 bgColor={colorsSkillbox[index % colorsSkillbox.length]}
               />
@@ -203,7 +251,7 @@ export default function Usuario() {
               </>
             ) : (
               displayedCursos.map((item) => (
-                <ListCardPerfil key={item.id} institution={item.plataformaInstituicao}
+                <ListCardPerfil key={item.id} institution={item.plataforma_instituicao}
                   name={item.nome} />
               ))
             )}
@@ -231,9 +279,9 @@ export default function Usuario() {
               displayedProjetos.map((item) => (
                 <ListCardProjetoPerfil
                   key={item.id}
-                  image={item.imagens[0] ?? ""}
+                  image={item.imagens?.[0]?.imagem_url ?? ""}
                   title={item.nome}
-                  skills={item.habilidadesUtilizadas?.map((item) => item.nome)}
+                  skills={item.habilidades?.map((item) => item.nome)}
                 />
               ))
             )}
@@ -261,7 +309,7 @@ export default function Usuario() {
               </>
             ) : (
               displayedMetas.map((item) => (
-                <ListCardPreview key={item.id} name={item.titulo} />
+                <ListCardPreview key={item.id} name={item.nome} />
               ))
             )}
 
@@ -281,6 +329,7 @@ export default function Usuario() {
         onClose={() => setIsExitModalVisible(false)}
         onConfirm={() => {
           setIsExitModalVisible(false);
+          handleUserAuth(null);
           router.push('/login');
         }}
         title="Confirmar saida"
@@ -290,7 +339,7 @@ export default function Usuario() {
       <View style={{ position: 'absolute', left: -10000 }}>
         <ViewShot ref={viewShotRef} options={{ fileName: "meu-perfil-skillbox", format: "jpg", quality: 0.9 }}>
           <PerfilCompartilhavel
-            userAuth={userAuth}
+            usuario={usuario}
             habilidades={habilidades}
             cursos={cursos}
             projetos={projetos} />

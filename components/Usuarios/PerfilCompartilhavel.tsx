@@ -1,4 +1,3 @@
-import { UserAuthType } from "@/comtexts/authContext";
 import { IGetCurso } from "@/interfaces/cadastroCurso";
 import { IGetHabilidade } from "@/interfaces/cadastroHabilidade";
 import { IGetProjeto } from "@/interfaces/cadastroProjeto";
@@ -9,7 +8,11 @@ import { ListCardProjetoPerfil } from "../Projetos/ListCardProjetoPerfil";
 import { SkillboxItem, TypeColorsSkillbox } from "../ui/SkillboxItem";
 
 interface PerfilCompartilhavelProps {
-  userAuth: UserAuthType | null;
+  usuario?: {
+    nome: string;
+    bio: string;
+    avatar: string;
+  };
   cursos: IGetCurso[];
   projetos: IGetProjeto[];
   habilidades: IGetHabilidade[];
@@ -17,20 +20,20 @@ interface PerfilCompartilhavelProps {
 
 const colorsSkillbox: TypeColorsSkillbox[] = ["green", "orange", "blue", "pink", "primary", "purple", "red"];
 
-export function PerfilCompartilhavel({ userAuth, cursos, projetos, habilidades }: PerfilCompartilhavelProps) {
+export function PerfilCompartilhavel({ usuario, cursos, projetos, habilidades }: PerfilCompartilhavelProps) {
   return (
     <View className="bg-white p-6" style={{ width: 400 }}>
       <View className="flex-row items-center mb-6">
-        {userAuth?.imagem ? (
-          <Image source={{ uri: userAuth.imagem }} className="w-20 h-20 rounded-full mr-4" />
+        {usuario?.avatar ? (
+          <Image source={{ uri: usuario.avatar ?? "" }} className="w-20 h-20 rounded-full mr-4" />
         ) : (
           <View className="w-20 h-20 rounded-full mr-4 bg-gray-200 items-center justify-center">
             <FontAwesome5 name="user-alt" size={32} color="#A0A0A0" />
           </View>
         )}
         <View className="flex-1">
-          <Text className="text-2xl font-inter-bold">{userAuth?.nome}</Text>
-          <Text className="text-base font-inter-light text-gray-600" numberOfLines={2}>{userAuth?.bio}</Text>
+          <Text className="text-2xl font-inter-bold">{usuario?.nome}</Text>
+          <Text className="text-base font-inter-light text-gray-600" numberOfLines={2}>{usuario?.bio}</Text>
         </View>
       </View>
 
@@ -39,7 +42,7 @@ export function PerfilCompartilhavel({ userAuth, cursos, projetos, habilidades }
         {habilidades.slice(0, 6).map((item, index) => (
           <SkillboxItem
             key={item.id}
-            title={item.proficiencia}
+            title={item.nivel}
             value={item.nome}
             bgColor={colorsSkillbox[index % colorsSkillbox.length]}
           />
@@ -50,7 +53,7 @@ export function PerfilCompartilhavel({ userAuth, cursos, projetos, habilidades }
         <View className="flex-1 mr-3">
           <Text className="text-xl font-inter-bold mb-2">Cursos</Text>
           {cursos.slice(0, 3).map(curso => (
-            <ListCardPerfil key={curso.id} institution={curso.plataformaInstituicao}
+            <ListCardPerfil key={curso.id} institution={curso.plataforma_instituicao}
               name={curso.nome} />
           ))}
         </View>
@@ -60,9 +63,9 @@ export function PerfilCompartilhavel({ userAuth, cursos, projetos, habilidades }
           {projetos.slice(0, 3).map(projeto => (
             <ListCardProjetoPerfil
               key={projeto.id}
-              image={projeto.imagens[0] ?? ""}
+              image={projeto.imagens?.[0]?.imagem_url ?? ""}
               title={projeto.nome}
-              skills={projeto.habilidadesUtilizadas?.map((item) => item.nome)}
+              skills={projeto.habilidades?.map((item) => item.nome)}
             />
           ))}
         </View>

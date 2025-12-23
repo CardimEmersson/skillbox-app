@@ -13,6 +13,7 @@ type ConfirmationModalProps = {
   confirmButtonText?: string;
   cancelButtonText?: string;
   isConfirming?: boolean;
+  colors?: [string, string, ...string[]];
 };
 
 export function ConfirmationModal({
@@ -24,6 +25,7 @@ export function ConfirmationModal({
   confirmButtonText = 'Confirmar',
   cancelButtonText = 'Cancelar',
   isConfirming = false,
+  colors = [...Colors.redGradient] as [string, string, ...string[]],
 }: ConfirmationModalProps) {
   return (
     <Modal
@@ -40,7 +42,7 @@ export function ConfirmationModal({
             title={confirmButtonText}
             onPress={onConfirm}
             className='w-full mb-2'
-            colors={[...Colors.redGradient] as [string, string, ...string[]]}
+            colors={colors}
             isLoading={isConfirming}
           />
           <CustomButton

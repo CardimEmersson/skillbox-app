@@ -1,11 +1,15 @@
-import { IApiPaginate, IParamsPaginate } from "@/interfaces/apiRequest";
-import { IGetProjeto, IGetProjetoById, IPostProjeto } from "@/interfaces/cadastroProjeto";
+import { IApiPaginate, IApiResponseDeleteSuccess, IApiResponseSuccess, IParamsPaginate } from "@/interfaces/apiRequest";
+import { IGetProjeto, IGetProjetoById } from "@/interfaces/cadastroProjeto";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
 
-export async function postProjeto(data: IPostProjeto): Promise<boolean> {
+export async function postProjeto(data: FormData): Promise<boolean> {
   try {
-    const responseData = await api.post<string>("/projetos", data).then((response) => response.data);
+    const responseData = await api.post<IApiResponseSuccess>("/projetos", data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {
@@ -14,10 +18,14 @@ export async function postProjeto(data: IPostProjeto): Promise<boolean> {
   return false;
 }
 
-export async function putProjeto(idProjeto: string, data: IPostProjeto): Promise<boolean> {
+export async function putProjeto(idProjeto: number, data: FormData): Promise<boolean> {
   if (!idProjeto) throw new Error("Id do projeto não informado");
   try {
-    const responseData = await api.put<string>(`/projetos/${idProjeto}`, data).then((response) => response.data);
+    const responseData = await api.put<IApiResponseSuccess>(`/projetos/${idProjeto}`, data, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    }).then((response) => response.data);
 
     return Boolean(responseData);
   } catch (error: any) {
@@ -40,7 +48,7 @@ export async function getProjetos(params?: IParamsPaginate): Promise<IApiPaginat
 }
 
 
-export async function getProjetoById(id: string): Promise<IGetProjetoById | null> {
+export async function getProjetoById(id: number): Promise<IGetProjetoById | null> {
   if (!id) throw new Error("Id do projeto não informado");
   try {
     const responseData = await api.get<IGetProjetoById>(`/projetos/${id}`).then((response) => response.data);
@@ -52,10 +60,10 @@ export async function getProjetoById(id: string): Promise<IGetProjetoById | null
   return null;
 }
 
-export async function deleteProjeto(id: string): Promise<IGetProjeto | null> {
+export async function deleteProjeto(id: number): Promise<IApiResponseDeleteSuccess | null> {
   if (!id) throw new Error("Id do projeto não informado");
   try {
-    const responseData = await api.delete<IGetProjeto>(`/projetos/${id}`).then((response) => response.data);
+    const responseData = await api.delete<IApiResponseDeleteSuccess>(`/projetos/${id}`).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {

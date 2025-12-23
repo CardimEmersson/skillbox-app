@@ -10,7 +10,6 @@ export const ProjetoSchema = Yup.object().shape({
   cursos: Yup.array().of(Yup.object().shape({
     id: Yup.number(),
     descricao: Yup.string(),
-    tipo: Yup.number(),
+    tipo: Yup.string(),
   })),
-  imagens: Yup.array().of(Yup.string()),
 });

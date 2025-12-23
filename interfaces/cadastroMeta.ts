@@ -3,33 +3,30 @@ export type TypeStatusMeta = 'planejado' | 'em andamento' | 'concluído';
 export interface CadastroMetaDataForm {
   titulo: string;
   descricao: string;
-  habilidadeSelecionada?: string;
-  habilidadesRelacionadas: string[];
+  habilidadeSelecionada?: number;
+  habilidadesRelacionadas: number[];
   prazoConclusao: string;
   status: TypeStatusMeta;
 }
 
 export interface IPostMeta {
-  titulo: string;
+  nome: string;
   descricao: string;
-  habilidadesRelacionadas: {
-    nome: string;
-    id: string;
-  }[];
-  prazoConclusao: string;
+  habilidades: string[];
+  prazo_conclusao: string;
   status: TypeStatusMeta;
-  idUser: string;
 }
 
 export interface IGetMeta {
-  id: string;
-  titulo: string;
+  id: number;
+  nome: string;
   descricao: string;
-  habilidadesRelacionadas: {
-    nome: string;
-    id: string;
-  }[];
-  prazoConclusao: string;
+  prazo_conclusao: string;
   status: string;
-  idUser: string;
+  habilidades: {
+    id: number;
+    nome: string;
+    icone: string;
+    nivel: string;
+  }[];
 }

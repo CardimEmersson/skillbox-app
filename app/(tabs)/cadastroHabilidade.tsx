@@ -4,17 +4,19 @@ import { ControlledSelect } from "@/components/ControlledSelect";
 import { BadgeClose, BadgetCloseGradient, ConfirmationModal, CustomButton, SelectOption } from "@/components/ui";
 import { HeaderList } from "@/components/ui/HeaderList";
 import { ImageUploader } from "@/components/ui/ImageUploader";
-import { AuthContext } from "@/comtexts/authContext";
 import { Colors } from "@/constants/Colors";
 import { HabilidadeSchema } from "@/data/shemas/habilidadeSchema";
-import { CadastroHabilidadeDataForm } from "@/interfaces/cadastroHabilidade";
+import { CadastroHabilidadeDataForm, TypeCursoProjeto } from "@/interfaces/cadastroHabilidade";
+import { getCursos } from "@/services/modules/cursoService";
 import { deleteHabilidade, getCategorias, getHabilidadeById, postCategoria, postHabilidade, putHabilidade } from "@/services/modules/habilidadeService";
+import { getProjetos } from "@/services/modules/projetoService";
+import { customToastError } from "@/utils/toast";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useState } from "react";
 import { useForm } from "react-hook-form";
-import { FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, View } from "react-native";
+import { BackHandler, FlatList, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 
 export type SelectionOptionCursoProjeto = {
@@ -24,8 +26,8 @@ export type SelectionOptionCursoProjeto = {
 
 const optionsProficiencia: SelectOption[] = [
   { label: 'Iniciante', value: 'iniciante' },
-  { label: 'Intermediario', value: 'intermediario' },
-  { label: 'Avançado', value: 'avancado' },
+  { label: 'Intermediario', value: 'intermediário' },
+  { label: 'Avançado', value: 'avançado' },
 ];
 
 const defaultValuesCadatroHabilidade: CadastroHabilidadeDataForm = {
@@ -41,7 +43,6 @@ const defaultValuesCadatroHabilidade: CadastroHabilidadeDataForm = {
 export default function CadastroHabilidade() {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
-  const { userAuth } = useContext(AuthContext);
   const [image, setImage] = useState<string | null>("");
   const [initialOptionsCategorias, setInitialOptionsCategorias] = useState<SelectOption[]>([]);
   const [optionsCategorias, setOptionsCategorias] = useState<SelectOption[]>([]);
@@ -187,7 +188,15 @@ export default function CadastroHabilidade() {
       categoriasHabilidade.forEach((id) => {
         formDataHabilidade.append('categorias[]', id.toString());
       });
+      data.cursosProjetos?.forEach((item) => {
+        if (item.tipo === 'curso') {
+          formDataHabilidade.append('cursos[]', item.id.toString());
+        }
 
+        if (item.tipo === 'projeto') {
+          formDataHabilidade.append('projetos[]', item.id.toString());
+        }
+      });
       if (data.icone) {
         formDataHabilidade.append('icone', {
           uri: data.icone.uri,
@@ -195,11 +204,15 @@ export default function CadastroHabilidade() {
           type: (data.icone as any).mimeType ?? 'image/jpeg',
         } as any);
       }
+      if (!image) {
+        formDataHabilidade.delete('icone');
+        formDataHabilidade.append('excluir_imagem', 'true');
+      }
 
       let result;
 
       if (params.id) {
-        result = await putHabilidade(params.id, formDataHabilidade);
+        result = await putHabilidade(Number(params.id), formDataHabilidade);
       } else {
         result = await postHabilidade(formDataHabilidade);
       }
@@ -213,7 +226,10 @@ export default function CadastroHabilidade() {
         setTimeout(() => router.push('/minhasHabilidades'), 300);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro na habilidade",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -223,7 +239,7 @@ export default function CadastroHabilidade() {
     if (!params.id) return;
     setIsSubmitting(true);
     try {
-      await deleteHabilidade(params.id);
+      await deleteHabilidade(Number(params.id));
       Toast.show({
         type: 'success',
         text1: 'Sucesso!',
@@ -231,7 +247,10 @@ export default function CadastroHabilidade() {
       });
       setTimeout(() => router.push('/minhasHabilidades'), 300);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro ao excluir', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro ao excluir",
+      });
     } finally {
       setIsSubmitting(false);
       setIsDeleteModalVisible(false);
@@ -255,7 +274,10 @@ export default function CadastroHabilidade() {
         setInitialOptionsCategorias(options);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na categoria', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro na categoria",
+      });
     } finally {
       setIsLoadingCategorias(false);
     }
@@ -264,26 +286,34 @@ export default function CadastroHabilidade() {
   async function getCursosProjetosData() {
     setIsLoadingCursosProjetos(true);
     try {
-      // const [cursos, projetos] = await Promise.all([getCursos(), getProjetos()]);
+      const [cursos, projetos] = await Promise.all([getCursos({
+        limit: 9999
+      }), getProjetos({
+        limit: 9999
+      })]);
 
-      // const optionsCursos: SelectionOptionCursoProjeto[] = cursos?.map((item) => {
-      //   return {
-      //     label: item.nome,
-      //     value: item.id,
-      //     tipo: 'curso',
-      //   }
-      // }) ?? [];
-      // const optionsProjetos: SelectionOptionCursoProjeto[] = projetos?.map((item) => {
-      //   return {
-      //     label: item.nome,
-      //     value: item.id,
-      //     tipo: 'projeto',
-      //   }
-      // }) ?? [];
+      const optionsCursos: SelectionOptionCursoProjeto[] = cursos?.data?.map((item) => {
+        return {
+          label: item.nome,
+          value: item.id,
+          tipo: 'curso',
+        }
+      }) ?? [];
+      
+      const optionsProjetos: SelectionOptionCursoProjeto[] = projetos?.data?.map((item) => {
+        return {
+          label: item.nome,
+          value: item.id,
+          tipo: 'projeto',
+        }
+      }) ?? [];
 
-      // setOptionsCursosProjetos([...optionsCursos, ...optionsProjetos]);
+      setOptionsCursosProjetos([...optionsCursos, ...optionsProjetos]);
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na curso', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro no curso - projeto",
+      });
     } finally {
       setIsLoadingCursosProjetos(false);
     }
@@ -294,24 +324,49 @@ export default function CadastroHabilidade() {
     try {
       const result = await getHabilidadeById(idHabilidade);
       if (result) {
+        const cursos: TypeCursoProjeto[] = result?.cursos?.map((item) => {
+          return {
+            id: item.id,
+            descricao: item.nome,
+            tipo: 'curso'
+          }
+        });
+
+        const projetos: TypeCursoProjeto[] = result?.projetos?.map((item) => {
+          return {
+            id: item.id,
+            descricao: item.nome,
+            tipo: 'projeto'
+          }
+        });
+
         setImage(result.icone ?? "");
         reset({
           categorias: result.categorias?.map((item) => item.id) ?? [],
-          cursosProjetos: [],
+          cursosProjetos: [...cursos, ...projetos],
           icone: undefined,
           nome: result.nome,
           proficiencia: result.nivel,
         });
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text2: error?.message ?? "Tente novamente mais tarde.",
+        text1: "Erro na habilidade",
+      });
     } finally {
       setIsLoadingData(false);
     }
   }
 
+  const onBackPress = () => {
+    router.push('/minhasHabilidades');
+    return true;
+  };
+
   useFocusEffect(
     useCallback(() => {
+      const backHandler = BackHandler.addEventListener('hardwareBackPress', onBackPress);
 
       getCategoriasData();
       getCursosProjetosData();
@@ -319,6 +374,7 @@ export default function CadastroHabilidade() {
       params.id && getHabilidadeByIdData(Number(params.id));
 
       return () => {
+        backHandler.remove();
         reset(defaultValuesCadatroHabilidade);
         setImage("");
       };
@@ -334,9 +390,7 @@ export default function CadastroHabilidade() {
         <View className='w-full flex flex-1 pt-10 px-8 pb-8'>
           <HeaderList
             title={params?.id ? "Editar habilidade" : "Cadastrar habilidade"}
-            onBack={() => {
-              router.push('/minhasHabilidades')
-            }}
+            onBack={onBackPress}
             disabledAdd
             hasAdd={false}
             hasDelete
@@ -361,6 +415,18 @@ export default function CadastroHabilidade() {
                     });
                   }} />
                   <Text className='font-inter-semibold text-md text-start mr-2'>Icone</Text>
+                  {!!image && (
+                    <Pressable onPress={() => {
+                      setImage(null);
+                      setValue("icone", undefined, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }} className="flex flex-row items-center mt-2">
+                      <Ionicons name="trash-outline" size={16} color="red" />
+                      <Text className="text-red-500 ml-1">Remover imagem</Text>
+                    </Pressable>
+                  )}
                 </View>
 
                 <View>
@@ -422,7 +488,7 @@ export default function CadastroHabilidade() {
                       options={optionsCursosProjetos}
                       isLoading={isLoadingCursosProjetos || isLoadingData}
                     />
-                    <Pressable className="w-1/4 flex items-center justify-center" onPress={onAddCursosProjetos}>
+                    <Pressable className={`w-1/4 flex items-center justify-center ${watch().cursoProjetoSelecionado ? '' : 'opacity-50'}`} onPress={onAddCursosProjetos} disabled={!watch().cursoProjetoSelecionado}>
                       <Ionicons name="add-circle" size={40} color="black" />
                     </Pressable>
                   </View>
