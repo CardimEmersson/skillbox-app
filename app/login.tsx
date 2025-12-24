@@ -1,4 +1,3 @@
-import AppleIcon from '@/assets/icons/apple.svg';
 import FacebookIcon from '@/assets/icons/facebook.svg';
 import GoogleIcon from '@/assets/icons/google.svg';
 import LinkedinIcon from '@/assets/icons/linkedin.svg';
@@ -112,9 +111,9 @@ export default function Login() {
             <IconButton>
               <GoogleIcon width={24} height={24} />
             </IconButton>
-            <IconButton>
+            {/* <IconButton>
               <AppleIcon width={24} height={24} />
-            </IconButton>
+            </IconButton> */}
             <IconButton>
               <FacebookIcon width={24} height={24} />
             </IconButton>

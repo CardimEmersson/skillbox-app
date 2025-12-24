@@ -18,8 +18,8 @@ interface IHabilidadeListItem {
 
 const percentualHabilidade = {
   "iniciante": 10,
-  "intermediario": 50,
-  "avancado": 100,
+  "intermediário": 50,
+  "avançado": 100,
 }
 
 export default function MinhasHabilidades() {

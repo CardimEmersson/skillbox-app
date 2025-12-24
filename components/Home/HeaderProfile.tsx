@@ -1,11 +1,9 @@
-import { sizes } from "@/constants/Sizes";
 import { AuthContext } from "@/contexts/authContext";
 import Feather from '@expo/vector-icons/Feather';
-import Ionicons from "@expo/vector-icons/Ionicons";
 
 import { useRouter } from "expo-router";
 import { useContext } from "react";
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Pressable, View } from "react-native";
 
 
 export function HeaderProfile() {
@@ -13,7 +11,7 @@ export function HeaderProfile() {
   const router = useRouter();
 
   return (
-    <View className="w-full flex-row justify-between items-center mb-5">
+    <View className="w-full flex-row justify-between items-center mb-5 relative">
       <Pressable onPress={() => {
         router.push('/usuario');
       }}>
@@ -28,17 +26,17 @@ export function HeaderProfile() {
           </View>
         )}
       </Pressable>
-
-      <View className='relative'>
-        <Pressable onPress={() => {
-          router.push('/notificacoes');
-        }}>
-          <Ionicons name="notifications-outline" size={sizes.icons.xl} color="black" />
-          <View className='w-5 h-5 bg-primary absolute rounded-full items-center justify-center -right-0'>
-            <Text className='color-white font-bold text-sm'>3</Text>
-          </View>
-        </Pressable>
-      </View>
+      <Image
+        style={{
+          width: 40,
+          height: 60,
+          objectFit: "contain",
+          position: "absolute",
+          right: 0,
+          top: 0,
+        }}
+        source={require('@/assets/images/skillbox.png')}
+      />
     </View>
   )
 }

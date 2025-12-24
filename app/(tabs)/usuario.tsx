@@ -1,6 +1,4 @@
-import { ListCardPerfil } from "@/components/Cursos/ListCardPerfil";
 import { ListCardPerfilSkeleton } from "@/components/Cursos/ListCardPerfilSkeleton";
-import { ListCardPreview } from "@/components/Metas/ListCardPreview";
 import { ListCardProjetoPerfil } from "@/components/Projetos/ListCardProjetoPerfil";
 import { ListCardProjetoPerfilSkeleton } from "@/components/Projetos/ListCardProjetoPerfilSkeleton";
 import { ConfirmationModal, CustomButton } from "@/components/ui";
@@ -8,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ImageUploader } from "@/components/ui/ImageUploader";
 import { SkillboxItem, SkillboxItemSkeleton, TypeColorsSkillbox } from "@/components/ui/SkillboxItem";
 import { PerfilCompartilhavel } from "@/components/Usuarios/PerfilCompartilhavel";
+import { PerfilCompartilhavelPdf } from "@/components/Usuarios/PerfilCompartilhavelPdf";
 import { Colors } from "@/constants/Colors";
 import { AuthContext } from "@/contexts/authContext";
 import { IParamsPaginate } from "@/interfaces/apiRequest";
@@ -22,10 +21,12 @@ import { getProjetos } from "@/services/modules/projetoService";
 import { getUsuarioAuth } from "@/services/modules/usuarioService";
 import { customToastError } from "@/utils/toast";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
+import * as FileSystem from 'expo-file-system';
+import * as Print from 'expo-print';
 import { useFocusEffect, useRouter } from "expo-router";
 import * as Sharing from 'expo-sharing';
 import { useCallback, useContext, useMemo, useRef, useState } from "react";
-import { Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { Image, Pressable, SafeAreaView, ScrollView, Text, View } from "react-native";
 import Toast from "react-native-toast-message";
 import ViewShot from "react-native-view-shot";
 
@@ -40,6 +41,13 @@ export default function Usuario() {
     nome: string;
     bio: string;
     avatar: string;
+    email: string;
+    telefone: string;
+    localizacao: string;
+    linkedin: string;
+    github: string;
+    website: string;
+    objetivoProfissional: string;
   }>();
   const [isLoadingUsuario, setIsLoadingUsuario] = useState(true);
   const scrollViewRef = useRef<ScrollView>(null);
@@ -48,10 +56,13 @@ export default function Usuario() {
   const [habilidades, setHabilidades] = useState<IGetHabilidade[]>([]);
   const [metas, setMetas] = useState<IGetMeta[]>([]);
   const viewShotRef = useRef<ViewShot>(null);
+  const viewShotPdfRef = useRef<ViewShot>(null);
   const [showAllHabilidades, setShowAllHabilidades] = useState(false);
   const [showAllCursos] = useState(false);
   const [showAllProjetos] = useState(false);
   const [showAllMetas] = useState(false);
+  const [showShareOptions, setShowShareOptions] = useState(false);
+  const [isLoadingShare, setIsLoadingShare] = useState(false);
 
   async function getUsuarioData() {
     setIsLoadingUsuario(true);
@@ -60,9 +71,16 @@ export default function Usuario() {
 
       if (result) {
         setUsuario({
-          nome: result.nome ?? "",
+          nome: `${result.nome} ${result.sobrenome ?? ""}`,
           bio: result.bio ?? "",
-          avatar: result.avatar ?? ""
+          avatar: result.avatar ?? "",
+          email: result.email ?? "",
+          telefone: result.telefone ?? "",
+          localizacao: result.localizacao ?? "",
+          linkedin: result.linkedin ?? "",
+          github: result.github ?? "",
+          website: result.site ?? "",
+          objetivoProfissional: result.objetivo_profissional ?? "",
         });
       }
     } catch (error: any) {
@@ -98,7 +116,8 @@ export default function Usuario() {
     }
   }
 
-  async function handleShare() {
+  async function handleShareImage() {
+    setShowShareOptions(false);
     try {
       if (viewShotRef.current?.capture) {
         const localUri = await viewShotRef.current.capture();
@@ -108,6 +127,44 @@ export default function Usuario() {
       }
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro ao compartilhar', text2: error?.message ?? "Não foi possível compartilhar o perfil." });
+    }
+  }
+
+  async function handleSharePdf() {
+    setShowShareOptions(false);
+    setIsLoadingShare(true);
+    try {
+      Toast.show({ type: 'info', text1: 'Gerando PDF', text2: 'Aguarde um momento...' });
+      
+      if (viewShotPdfRef.current?.capture) {
+        const uriImg = await viewShotPdfRef.current.capture();
+        
+        const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+          Image.getSize(uriImg, (w, h) => resolve({ width: w, height: h }), (error) => reject(error));
+        });
+
+        const base64 = await FileSystem.readAsStringAsync(uriImg, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+
+        const html = `
+          <html>
+            <body style="margin: 0; padding: 0;">
+              <img src="data:image/jpeg;base64,${base64}" style="width: 100%; height: 100%;" />
+            </body>
+          </html>
+        `;
+
+        const { uri } = await Print.printToFileAsync({ html, width, height });
+
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        }
+      }
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro ao gerar PDF', text2: error?.message ?? "Não foi possível gerar o PDF." });
+    } finally {
+      setIsLoadingShare(false);
     }
   }
 
@@ -177,7 +234,7 @@ export default function Usuario() {
           )}
         </View>
 
-        <View className="w-full flex flex-row justify-between mt-10">
+        <View className="w-full flex flex-row justify-between mt-10 z-50">
           <CustomButton
             title='Editar perfil'
             onPress={() => {
@@ -185,12 +242,44 @@ export default function Usuario() {
             }}
             className="flex-1 mt-auto mr-2"
           />
-          <CustomButton
-            title='Compartilhar'
-            onPress={handleShare}
-            className="flex-1 mt-auto"
-            colors={[...Colors.greenGradient] as [string, string, ...string[]]}
-          />
+          <View className="flex-1 mt-auto relative">
+            <CustomButton
+              title='Compartilhar'
+              onPress={() => setShowShareOptions(!showShareOptions)}
+              className="w-full"
+              colors={[...Colors.greenGradient] as [string, string, ...string[]]}
+              rightIcon={
+                <AntDesign name="sharealt" size={24} color="white" />
+              }
+              isLoading={isLoadingShare}
+            />
+            {showShareOptions && (
+              <View className="absolute top-16 right-0 w-full bg-white rounded-lg shadow-black shadow-2xl border border-light-gray z-50 elevation-lg p-2">
+                <CustomButton
+                  title='Imagem'
+                  onPress={handleShareImage}
+                  className="w-full mb-1"
+                  variant="outlined"
+                  colors={[...Colors.greenGradient] as [string, string, ...string[]]}
+                  finalColor={1}
+                  rightIcon={
+                    <FontAwesome5 name="image" size={20} color="#00B288" />
+                  }
+                />
+                <CustomButton
+                  title='PDF'
+                  onPress={handleSharePdf}
+                  className="w-full"
+                  variant="outlined"
+                  colors={[...Colors.greenGradient] as [string, string, ...string[]]}
+                  finalColor={1}
+                  rightIcon={
+                    <FontAwesome5 name="file-pdf" size={20} color="#00B288" />
+                  }
+                />
+              </View>
+            )}
+          </View>
         </View>
 
         <Text className="text-3xl font-inter-bold my-8">Skillbox</Text>
@@ -225,7 +314,7 @@ export default function Usuario() {
           )}
         </View>
         {habilidades.length > 6 && (
-          <View className="w-full">
+          <View className="w-full mb-4">
             <CustomButton
               title={showAllHabilidades ? 'Esconder habilidades' : 'Carregar mais'}
               onPress={() => {
@@ -237,22 +326,27 @@ export default function Usuario() {
           </View>
         )}
 
-        <View className="flex flex-row w-full">
+        <View className="flex flex-row w-full mb-4">
           <View className="flex flex-1 mr-2">
             <Text className="text-3xl font-inter-bold">Cursos</Text>
 
             {isLoadingData ? (
               <>
-                <ListCardPerfilSkeleton />
-                <ListCardPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
 
-                <ListCardPerfilSkeleton />
-                <ListCardPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
+                <ListCardProjetoPerfilSkeleton />
               </>
             ) : (
               displayedCursos.map((item) => (
-                <ListCardPerfil key={item.id} institution={item.plataforma_instituicao}
-                  name={item.nome} />
+                <ListCardProjetoPerfil
+                  key={item.id}
+                  image={item.imagens?.[0]?.imagem_url ?? ""}
+                  title={item.nome}
+                  skills={item.habilidades?.map((item) => item.nome)}
+                  description={`${item.plataforma_instituicao} - ${item.carga_horaria} horas`}
+                />
               ))
             )}
 
@@ -282,6 +376,7 @@ export default function Usuario() {
                   image={item.imagens?.[0]?.imagem_url ?? ""}
                   title={item.nome}
                   skills={item.habilidades?.map((item) => item.nome)}
+                  description={item.descricao}
                 />
               ))
             )}
@@ -296,9 +391,9 @@ export default function Usuario() {
           </View>
         </View>
         <View className="flex w-full">
-          <Text className="text-3xl font-inter-bold">Metas</Text>
+          <Text className="text-3xl font-inter-bold mb-2">Metas</Text>
 
-          <View className="w-full flex flex-row flex-wrap justify-between">
+          <View className="w-full flex flex-row flex-wrap justify-between gap-1">
             {isLoadingData ? (
               <>
                 <ListCardPerfilSkeleton />
@@ -309,7 +404,15 @@ export default function Usuario() {
               </>
             ) : (
               displayedMetas.map((item) => (
-                <ListCardPreview key={item.id} name={item.nome} />
+                <CustomButton
+                  key={item.id}
+                  title={item.nome}
+                  onPress={() => {
+                    //
+                  }}
+                  className="flex-1"
+                  colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
+                />
               ))
             )}
 
@@ -342,7 +445,20 @@ export default function Usuario() {
             usuario={usuario}
             habilidades={habilidades}
             cursos={cursos}
-            projetos={projetos} />
+            projetos={projetos} 
+            metas={metas}
+          />
+        </ViewShot>
+      </View>
+      <View style={{ position: 'absolute', left: -20000 }}>
+        <ViewShot ref={viewShotPdfRef} options={{ fileName: "meu-perfil-skillbox", format: "jpg", quality: 0.9 }}>
+          <PerfilCompartilhavelPdf
+            usuario={usuario}
+            habilidades={habilidades}
+            cursos={cursos}
+            projetos={projetos} 
+            metas={metas}
+          />
         </ViewShot>
       </View>
     </SafeAreaView>

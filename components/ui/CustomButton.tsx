@@ -1,5 +1,6 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import { ColorValue, Text, TouchableOpacity, TouchableOpacityProps } from "react-native";
+import { ReactNode } from 'react';
+import { ColorValue, Text, TouchableOpacity, TouchableOpacityProps, View } from "react-native";
 import { Spinner } from './Spinner';
 
 interface CustomButtonProps extends TouchableOpacityProps {
@@ -8,11 +9,13 @@ interface CustomButtonProps extends TouchableOpacityProps {
   colors?: readonly [ColorValue, ColorValue, ...ColorValue[]];
   isLoading?: boolean;
   variant?: 'solid' | 'outlined';
+  rightIcon?: ReactNode;
+  finalColor?: number;
 }
 
-export function CustomButton({ title, className, textClassName, colors, isLoading, variant = 'solid', ...props }: CustomButtonProps) {
+export function CustomButton({ title, className, textClassName, colors, isLoading, variant = 'solid', rightIcon, finalColor = 0, ...props }: CustomButtonProps) {
   const finalColors = colors ?? ['#3874EA', '#3874EA'];
-  const mainColor = finalColors[0] as string;
+  const mainColor = finalColors[finalColor] as string;
 
   if (variant === 'outlined') {
     return (
@@ -20,15 +23,18 @@ export function CustomButton({ title, className, textClassName, colors, isLoadin
         {...props}
         activeOpacity={0.8}
         style={[{ borderColor: mainColor, borderWidth: 2 }]}
-        className={`rounded-xl items-center justify-center py-[14px] px-4 ${className} ${isLoading ? 'opacity-70' : ''}`}
+        className={`rounded-xl flex-row items-center justify-center py-[14px] px-4 ${className} ${isLoading ? 'opacity-70' : ''}`}
         disabled={isLoading || props.disabled}
       >
         {isLoading ? (
           <Spinner size="small" color={mainColor} />
         ) : (
-          <Text style={{ color: mainColor }} className={`text-center font-inter-bold text-base ${textClassName}`}>
-            {title}
-          </Text>
+          <>
+            <Text style={{ color: mainColor }} className={`text-center font-inter-bold text-base ${textClassName}`}>
+              {title}
+            </Text>
+            {rightIcon && <View className="ml-2">{rightIcon}</View>}
+          </>
         )}
       </TouchableOpacity>
     );
@@ -41,11 +47,14 @@ export function CustomButton({ title, className, textClassName, colors, isLoadin
       className={`rounded-xl overflow-hidden ${className} ${isLoading ? 'opacity-70' : ''}`}
       disabled={isLoading || props.disabled}
     >
-      <LinearGradient colors={finalColors} className="items-center justify-center py-4 px-4">
+      <LinearGradient colors={finalColors} className="flex-row items-center justify-center py-4 px-4">
         {isLoading ? (
           <Spinner size="small" color="white" />
         ) : (
-          <Text className={`text-white text-center font-inter-bold text-base ${textClassName}`}>{title}</Text>
+          <>
+            <Text className={`text-white text-center font-inter-bold text-base ${textClassName}`}>{title}</Text>
+            {rightIcon && <View className="ml-2">{rightIcon}</View>}
+          </>
         )}
       </LinearGradient>
     </TouchableOpacity>

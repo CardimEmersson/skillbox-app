@@ -1,32 +1,25 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { FlatList, Image, Text, View } from "react-native";
 
 interface ListCardProjetoPerfilProps {
   title: string;
+  description: string;
   image: string;
   skills: string[];
 }
 
-export function ListCardProjetoPerfil({ title, image, skills }: ListCardProjetoPerfilProps) {
-  const color = useThemeColor({}, 'text');
-
+export function ListCardProjetoPerfil({ title, image, skills, description }: ListCardProjetoPerfilProps) {
   return (
     <View className="rounded-xl overflow-hidden bg-[#F3F3F3] elevation-lg mt-2">
-      {image ? (
+      {Boolean(image) && (
         <Image
           source={{ uri: image }}
           className="w-full h-20"
         />
-      ) : (
-        <View className='w-full flex items-center h-20 justify-center bg-white'>
-          <MaterialIcons name="hide-image" size={24} color={color} />
-        </View>
-      )}
-       
+      )}       
 
       <View className="px-2 py-1">
-        <Text className="text-base font-inter-semibold p-2">{title}</Text>
+        <Text className="text-xl font-inter-semibold px-2 pt-2">{title}</Text>
+        <Text className="text-sm font-inter-regular px-2 pb-2" numberOfLines={2}>{description}</Text>
 
         <FlatList
           data={skills}

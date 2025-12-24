@@ -194,7 +194,7 @@ export default function CadastroUsuario() {
           dataNascimento: result.dataNascimento,
           imagem: result.avatar_url,
           bio: data.bio,
-          id: userAuth?.id ?? 0, 
+          id: userAuth?.id ?? 0,
           token: userAuth?.token ?? "",
         });
         Toast.show({
@@ -214,7 +214,7 @@ export default function CadastroUsuario() {
     }
   }
 
-   const onBackPress = () => {
+  const onBackPress = () => {
     router.push('/usuario');
     return true;
   };
@@ -439,14 +439,14 @@ export default function CadastroUsuario() {
                 isLoading={isLoadingData}
               />
 
-              <CustomButton
-                title='Salvar'
-                onPress={handleSubmit(handleSubmitUsuario)}
-                className="w-full mb-2 mt-auto"
-                isLoading={isSubmitting}
-              />
             </View>
           </ScrollView>
+          <CustomButton
+            title='Salvar'
+            onPress={handleSubmit(handleSubmitUsuario)}
+            className="w-full mb-2 mt-auto"
+            isLoading={isSubmitting}
+          />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>

@@ -204,7 +204,7 @@ export default function CadastroHabilidade() {
           type: (data.icone as any).mimeType ?? 'image/jpeg',
         } as any);
       }
-      if (!image) {
+      if (!image && params?.id) {
         formDataHabilidade.delete('icone');
         formDataHabilidade.append('excluir_imagem', 'true');
       }
