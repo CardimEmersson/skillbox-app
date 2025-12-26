@@ -9,6 +9,7 @@ import { AuthContext } from '@/contexts/authContext';
 import { LoginSchema } from '@/data/shemas/loginSchema';
 import { IPostLogin, LoginDataForm } from '@/interfaces/login';
 import { postLogin } from '@/services/modules/loginService';
+import { customToastError } from '@/utils/toast';
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
 import { useContext, useRef, useState } from 'react';
@@ -18,7 +19,7 @@ import Toast from 'react-native-toast-message';
 
 export default function Login() {
   const router = useRouter();
-  const {handleUserAuth} = useContext(AuthContext);
+  const { handleUserAuth } = useContext(AuthContext);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputSenhaRef = useRef<TextInput>(null);
 
@@ -54,7 +55,10 @@ export default function Login() {
         router.push('/home');
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no login', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no login',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -90,11 +94,17 @@ export default function Login() {
             name='senha'
             type='password'
             placeholder='********'
-            
+
           />
-          <Pressable className='my-4'>
-            <Text className="text-link">Esqueceu a senha?</Text>
-          </Pressable>
+          <View className='flex-row items-center'>
+            <Pressable className='my-4' onPress={() => router.push('/forgot-password')}>
+              <Text className="text-link">Esqueceu a senha?</Text>
+            </Pressable>
+            <Text className="mx-4">|</Text>
+            <Pressable className='my-4' onPress={() => router.push('/reset-password')}>
+              <Text className="text-link">Redefinir senha</Text>
+            </Pressable>
+          </View>
           <CustomButton
             title='Entrar'
             onPress={handleSubmit(handleLogin)}
@@ -121,7 +131,7 @@ export default function Login() {
               <LinkedinIcon width={24} height={24} />
             </IconButton>
           </View>
-          
+
           <View className="flex-row justify-center items-center w-full my-2">
             <Text className="text-gray flex items-center justify-center">Não tem uma conta? </Text>
             <Pressable onPress={() => router.push('/register')}>

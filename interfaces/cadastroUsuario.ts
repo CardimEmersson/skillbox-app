@@ -81,3 +81,18 @@ export interface IPutUsuarioResponse {
   telefone: string; 
   updated_at: string;
 }
+
+export interface IPostConfirmarConta {
+  email: string;
+  token: string;
+}
+
+export interface IPostEsqueciSenha {
+  email: string;
+}
+
+export interface IPostRedefinirSenha {
+  email: string;
+  token: string;
+  novaSenha: string;
+}

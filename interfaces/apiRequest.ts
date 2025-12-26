@@ -11,7 +11,7 @@ export interface IApiPaginate<T> {
 }
 
 export interface IApiResponseSuccess {
-  id: number; 
+  id?: number; 
   message: string;
 }
 

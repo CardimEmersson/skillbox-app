@@ -6,6 +6,7 @@ import { RegisterSchema } from '@/data/shemas/registerSchema';
 import { RegisterDataForm } from '@/interfaces/register';
 import { postRegister } from '@/services/modules/registerService';
 import { convertDateToIso } from '@/utils/date';
+import { customToastError } from '@/utils/toast';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useRouter } from "expo-router";
@@ -59,14 +60,20 @@ export default function Register() {
         Toast.show({
           type: 'success',
           text1: 'Sucesso!',
-          text2: 'Sua conta foi criada.',
+          text2: 'Verifique seu email.',
         });
         setTimeout(() => {
-          router.push('/login');
+          router.push({
+            pathname: '/confirm-account',
+            params: { email: data.email }
+          });
         }, 500);
       }
     } catch (error: any) {
-      Toast.show({ type: 'error', text1: 'Erro no cadastro', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro no cadastro',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -212,6 +219,11 @@ export default function Register() {
                     <Text className="text-gray flex items-center justify-center">Já tenho uma conta? </Text>
                     <Pressable onPress={() => router.push('/login')}>
                       <Text className="text-link">Login</Text>
+                    </Pressable>
+                  </View>
+                  <View className="flex-row justify-center items-center w-full my-2">
+                    <Pressable onPress={() => router.push('/confirm-account')}>
+                      <Text className="text-link">Confirmar cadastro</Text>
                     </Pressable>
                   </View>
                 </View>
