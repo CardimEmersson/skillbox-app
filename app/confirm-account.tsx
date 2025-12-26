@@ -7,7 +7,7 @@ import { customToastError } from '@/utils/toast';
 import { AntDesign } from '@expo/vector-icons';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useForm } from "react-hook-form";
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, SafeAreaView, ScrollView, Text, TextInput, TouchableWithoutFeedback, View } from "react-native";
 import Toast from 'react-native-toast-message';
@@ -20,16 +20,27 @@ type ConfirmAccountData = {
 
 export default function ConfirmAccount() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const { email, token } = useLocalSearchParams<{ email: string, token: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputTokenRef = useRef<TextInput>(null);
 
-  const { control, handleSubmit } = useForm<ConfirmAccountData>({
+  const { control, handleSubmit, setValue } = useForm<ConfirmAccountData>({
     resolver: yupResolver(ConfirmAccountSchema),
     defaultValues: {
       email: email ?? '',
+      token: token ?? '',
     },
   });
+
+  useEffect(() => {
+    if (email) {
+      setValue('email', email);
+    }
+    
+    if (token) {
+      setValue('token', email);
+    }
+  }, [email, token, setValue]);
 
   async function handleConfirmAccount(data: ConfirmAccountData) {
     setIsSubmitting(true);
