@@ -8,6 +8,14 @@ export interface IPostLogin {
   senha: string;
 }
 
+export interface IPostLoginGoogle {
+  token: string;
+}
+
+export interface IPostLoginFacebook {
+  token: string;
+}
+
 export interface IPostLoginResponse {
   access_token: string;
   user: {

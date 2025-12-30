@@ -21,6 +21,7 @@ import { getProjetos } from "@/services/modules/projetoService";
 import { getUsuarioAuth } from "@/services/modules/usuarioService";
 import { customToastError } from "@/utils/toast";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as FileSystem from 'expo-file-system';
 import * as Print from 'expo-print';
 import { useFocusEffect, useRouter } from "expo-router";
@@ -430,8 +431,9 @@ export default function Usuario() {
       <ConfirmationModal
         isVisible={isExitModalVisible}
         onClose={() => setIsExitModalVisible(false)}
-        onConfirm={() => {
+        onConfirm={async () => {
           setIsExitModalVisible(false);
+          await AsyncStorage.removeItem("@SkillBox:user");
           handleUserAuth(null);
           router.push('/login');
         }}

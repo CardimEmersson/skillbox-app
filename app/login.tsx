@@ -7,15 +7,21 @@ import { CustomButton } from '@/components/ui/CustomButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { AuthContext } from '@/contexts/authContext';
 import { LoginSchema } from '@/data/shemas/loginSchema';
-import { IPostLogin, LoginDataForm } from '@/interfaces/login';
-import { postLogin } from '@/services/modules/loginService';
+import { IPostLogin, IPostLoginFacebook, IPostLoginGoogle, IPostLoginResponse, LoginDataForm } from '@/interfaces/login';
+import { postLogin, postLoginFacebook, postLoginGoogle } from '@/services/modules/loginService';
 import { customToastError } from '@/utils/toast';
 import { yupResolver } from "@hookform/resolvers/yup";
+import { makeRedirectUri } from 'expo-auth-session';
+import * as Facebook from 'expo-auth-session/providers/facebook';
+import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from "expo-router";
-import { useContext, useRef, useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Image, Pressable, Text, TextInput, View } from "react-native";
 import Toast from 'react-native-toast-message';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function Login() {
   const router = useRouter();
@@ -23,12 +29,44 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputSenhaRef = useRef<TextInput>(null);
 
+  const [googleRequest, googleResponse, googlePromptAsync] = Google.useAuthRequest({
+    androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
+    iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      scheme: 'com.emersson.skillbox',
+    }),
+  });
+
+  const [facebookRequest, facebookResponse, facebookPromptAsync] = Facebook.useAuthRequest({
+    clientId: process.env.EXPO_PUBLIC_FACEBOOK_CLIENT_ID,
+    redirectUri: makeRedirectUri({
+      scheme: `fb${process.env.EXPO_PUBLIC_FACEBOOK_CLIENT_ID}`,
+      path: 'authorize',
+    }),
+  });
+
   const {
     control,
     handleSubmit
   } = useForm<LoginDataForm>({
     resolver: yupResolver(LoginSchema)
   });
+
+  function handleUserLogin(user: IPostLoginResponse) {
+    handleUserAuth({
+      token: user.access_token,
+      nome: user.user?.nome,
+      sobrenome: user.user?.sobrenome,
+      email: user.user?.email,
+      telefone: user.user?.telefone,
+      dataNascimento: user.user?.data_nascimento,
+      bio: "",
+      id: user.user?.id,
+      imagem: user.user?.avatar_url,
+    });
+    router.push('/home');
+  }
 
   async function handleLogin(data: LoginDataForm) {
     setIsSubmitting(true);
@@ -41,18 +79,7 @@ export default function Login() {
       const result = await postLogin(postData);
 
       if (result) {
-        handleUserAuth({
-          token: result.access_token,
-          nome: result.user?.nome,
-          sobrenome: result.user?.sobrenome,
-          email: result.user?.email,
-          telefone: result.user?.telefone,
-          dataNascimento: result.user?.data_nascimento,
-          bio: "",
-          id: result.user?.id,
-          imagem: result.user?.avatar_url,
-        });
-        router.push('/home');
+        handleUserLogin(result);
       }
     } catch (error: any) {
       customToastError({
@@ -63,6 +90,64 @@ export default function Login() {
       setIsSubmitting(false);
     }
   }
+
+  const handleGoogleLogin = useCallback(async (googleToken: string) => {
+    setIsSubmitting(true);
+    try {
+      const postData: IPostLoginGoogle = {
+        token: googleToken
+      }
+
+      const result = await postLoginGoogle(postData);
+      
+      if (result) {
+        handleUserLogin(result);
+      }
+    } catch (error: any) {
+      customToastError({
+        text1: 'Erro no login',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, []);
+
+  const handleFacebookLogin = useCallback(async (accessToken: string) => {
+    setIsSubmitting(true);
+    try {
+      const postData: IPostLoginFacebook = {
+        token: accessToken
+      }
+
+      const result = await postLoginFacebook(postData);
+
+      if (result) {
+        handleUserLogin(result);
+      }
+    } catch (error: any) {
+      customToastError({
+        text1: 'Erro no login Facebook',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (googleResponse?.type === 'success') {
+      const { authentication } = googleResponse;
+      authentication?.accessToken && handleGoogleLogin(authentication?.accessToken ?? "");
+    }
+  }, [googleResponse]);
+
+  useEffect(() => {
+    if (facebookResponse?.type === 'success') {
+      const { authentication } = facebookResponse;
+      authentication?.accessToken && handleFacebookLogin(authentication?.accessToken ?? "");
+    }
+  }, [facebookResponse]);
 
   return (
     <>
@@ -118,13 +203,13 @@ export default function Login() {
             <View className="flex-1 border-b border-gray opacity-50" />
           </View>
           <View className="flex-row w-full justify-around my-4">
-            <IconButton>
+            <IconButton disabled={!googleRequest || isSubmitting} onPress={() => googlePromptAsync()}>
               <GoogleIcon width={24} height={24} />
             </IconButton>
             {/* <IconButton>
               <AppleIcon width={24} height={24} />
             </IconButton> */}
-            <IconButton>
+            <IconButton disabled={!facebookRequest || isSubmitting} onPress={() => facebookPromptAsync()}>
               <FacebookIcon width={24} height={24} />
             </IconButton>
             <IconButton>

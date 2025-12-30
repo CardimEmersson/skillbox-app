@@ -12,8 +12,6 @@ export function customToastError({
     type: 'error',
     text1,
     text2,
-    visibilityTime: 10000,
-    autoHide: false,
     text2NumberOfLines: 100,
   } as any);
 }

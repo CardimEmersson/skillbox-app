@@ -26,6 +26,9 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="skillbox"/>
+        <data android:scheme="com.emersson.skillbox"/>
+        <data android:scheme="fb2576855739349520"/>
+        <data android:scheme="exp+skillbox"/>
       </intent-filter>
     </activity>
   </application>
