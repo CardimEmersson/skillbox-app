@@ -2,7 +2,7 @@ import { BackgroundGradient } from '@/components/BackgroundGradient';
 import { ControlledInput } from "@/components/ControlledInput";
 import { CustomButton } from "@/components/ui/CustomButton";
 import { sizes } from '@/constants/Sizes';
-import { postConfirmarConta } from '@/services/modules/registerService';
+import { postConfirmarConta, postReenviarToken } from '@/services/modules/registerService';
 import { customToastError } from '@/utils/toast';
 import { AntDesign } from '@expo/vector-icons';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -24,7 +24,7 @@ export default function ConfirmAccount() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const inputTokenRef = useRef<TextInput>(null);
 
-  const { control, handleSubmit, setValue } = useForm<ConfirmAccountData>({
+  const { control, handleSubmit, setValue, getValues } = useForm<ConfirmAccountData>({
     resolver: yupResolver(ConfirmAccountSchema),
     defaultValues: {
       email: email ?? '',
@@ -68,6 +68,30 @@ export default function ConfirmAccount() {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendToken() {
+    const emailValue = getValues('email');
+    if (!emailValue) {
+      return customToastError({
+        text1: 'Atenção',
+        text2: 'Preencha o campo de email para reenviar o código.',
+      });
+    }
+
+    try {
+      await postReenviarToken({ email: emailValue });
+      Toast.show({
+        type: 'success',
+        text1: 'Código reenviado!',
+        text2: 'Verifique sua caixa de entrada.',
+      });
+    } catch (error: any) {
+      customToastError({
+        text1: 'Erro ao reenviar',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
     }
   }
 
@@ -128,6 +152,13 @@ export default function ConfirmAccount() {
                     className="w-full mb-2"
                     isLoading={isSubmitting}
                   />
+
+                  <View className="flex-row justify-center items-center w-full my-2">
+                    <Text className="text-gray flex items-center justify-center">Não recebeu o código? </Text>
+                    <Pressable onPress={handleResendToken} disabled={isSubmitting}>
+                      <Text className="text-link">Reenviar</Text>
+                    </Pressable>
+                  </View>
                 </View>
               </ScrollView>
             </TouchableWithoutFeedback>

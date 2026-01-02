@@ -20,6 +20,9 @@ Skillbox é um aplicativo móvel desenvolvido com React Native e Expo, projetado
 - **React Hook Form** & **Yup** (para gerenciamento e validação de formulários)
 - **Axios** (para requisições HTTP)
 
+## Política de Privacidade
+[Política de Privacidade](https://cardimemersson.github.io/skillbox-privacy-policy/)
+
 ## 🏁 Como Executar o Projeto
 
 ### 1. Instale as dependências
@@ -31,3 +34,4 @@ npm install
 inicie o Expo:
 ```bash
 npx expo start
+```

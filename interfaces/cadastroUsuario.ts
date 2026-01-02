@@ -96,3 +96,7 @@ export interface IPostRedefinirSenha {
   token: string;
   novaSenha: string;
 }
+
+export interface IPostReenviarToken {
+  email: string;
+}

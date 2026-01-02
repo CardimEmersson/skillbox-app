@@ -1,5 +1,5 @@
 import { IApiResponseSuccess } from "@/interfaces/apiRequest";
-import { IPostConfirmarConta, IPostEsqueciSenha, IPostRedefinirSenha } from "@/interfaces/cadastroUsuario";
+import { IPostConfirmarConta, IPostEsqueciSenha, IPostRedefinirSenha, IPostReenviarToken } from "@/interfaces/cadastroUsuario";
 import { IPostUsuarioResponse } from "@/interfaces/register";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
@@ -48,6 +48,17 @@ export async function postRedefinirSenha(data: IPostRedefinirSenha): Promise<IAp
     return responseData;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél redefinir a senha! Tente mais tarde");
+  }
+  return null;
+}
+
+export async function postReenviarToken(data: IPostReenviarToken): Promise<IApiResponseSuccess | null> {
+  try {
+    const responseData = await api.post<IApiResponseSuccess>("/usuarios/reenviar-email", data).then((response) => response.data);
+
+    return responseData;
+  } catch (error: any) {
+    getErrorsByApi(error, "Não foi possivél reenviar o email! Tente mais tarde");
   }
   return null;
 }

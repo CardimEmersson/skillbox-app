@@ -16,6 +16,10 @@ export interface IPostLoginFacebook {
   token: string;
 }
 
+export interface IPostLoginLinkedin {
+  code: string;
+}
+
 export interface IPostLoginResponse {
   access_token: string;
   user: {

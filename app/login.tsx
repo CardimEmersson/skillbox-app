@@ -7,11 +7,11 @@ import { CustomButton } from '@/components/ui/CustomButton';
 import { IconButton } from '@/components/ui/IconButton';
 import { AuthContext } from '@/contexts/authContext';
 import { LoginSchema } from '@/data/shemas/loginSchema';
-import { IPostLogin, IPostLoginFacebook, IPostLoginGoogle, IPostLoginResponse, LoginDataForm } from '@/interfaces/login';
-import { postLogin, postLoginFacebook, postLoginGoogle } from '@/services/modules/loginService';
+import { IPostLogin, IPostLoginFacebook, IPostLoginGoogle, IPostLoginLinkedin, IPostLoginResponse, LoginDataForm } from '@/interfaces/login';
+import { postLogin, postLoginFacebook, postLoginGoogle, postLoginLinkedin } from '@/services/modules/loginService';
 import { customToastError } from '@/utils/toast';
 import { yupResolver } from "@hookform/resolvers/yup";
-import { makeRedirectUri } from 'expo-auth-session';
+import { makeRedirectUri, ResponseType, useAuthRequest } from 'expo-auth-session';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from "expo-router";
@@ -45,6 +45,26 @@ export default function Login() {
       path: 'authorize',
     }),
   });
+
+  const linkedinRedirectUri = `https://auth.expo.io/@emersson/skillbox?returnUrl=${encodeURIComponent(
+    makeRedirectUri({
+      scheme: 'com.emersson.skillbox',
+    })
+  )}`;
+
+
+  const [linkedinRequest, linkedinResponse, linkedinPromptAsync] = useAuthRequest(
+    {
+      clientId: process.env.EXPO_PUBLIC_LINKEDIN_CLIENT_ID!,
+      scopes: ['openid', 'profile', 'email'],
+      redirectUri: linkedinRedirectUri,
+      responseType: ResponseType.Code,
+    },
+    {
+      authorizationEndpoint: 'https://www.linkedin.com/oauth/v2/authorization',
+      tokenEndpoint: 'https://www.linkedin.com/oauth/v2/accessToken',
+    }
+  );
 
   const {
     control,
@@ -135,6 +155,28 @@ export default function Login() {
     }
   }, []);
 
+  const handleLinkedinLogin = useCallback(async (code: string) => {
+    setIsSubmitting(true);
+    try {
+      const postData: IPostLoginLinkedin = {
+        code: code
+      }
+
+      const result = await postLoginLinkedin(postData);
+
+      if (result) {
+        handleUserLogin(result);
+      }
+    } catch (error: any) {
+      customToastError({
+        text1: 'Erro no login LinkedIn',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (googleResponse?.type === 'success') {
       const { authentication } = googleResponse;
@@ -148,6 +190,13 @@ export default function Login() {
       authentication?.accessToken && handleFacebookLogin(authentication?.accessToken ?? "");
     }
   }, [facebookResponse]);
+
+  useEffect(() => {
+    if (linkedinResponse?.type === 'success') {
+      const { code } = linkedinResponse.params;
+      code && handleLinkedinLogin(code);
+    }
+  }, [linkedinResponse]);
 
   return (
     <>
@@ -212,7 +261,7 @@ export default function Login() {
             <IconButton disabled={!facebookRequest || isSubmitting} onPress={() => facebookPromptAsync()}>
               <FacebookIcon width={24} height={24} />
             </IconButton>
-            <IconButton>
+            <IconButton disabled={!linkedinRequest || isSubmitting} onPress={() => linkedinPromptAsync()}>
               <LinkedinIcon width={24} height={24} />
             </IconButton>
           </View>
