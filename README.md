@@ -23,6 +23,11 @@ Skillbox é um aplicativo móvel desenvolvido com React Native e Expo, projetado
 ## Política de Privacidade
 [Política de Privacidade](https://cardimemersson.github.io/skillbox-privacy-policy/)
 
+## Build Android
+```bash
+eas build --platform android --profile production
+```
+
 ## 🏁 Como Executar o Projeto
 
 ### 1. Instale as dependências

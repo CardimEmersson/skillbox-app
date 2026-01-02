@@ -21,7 +21,7 @@ export async function postRegister(data: FormData): Promise<boolean> {
 
 export async function postConfirmarConta(data: IPostConfirmarConta): Promise<IApiResponseSuccess | null> {
   try {
-    const responseData = await api.post<IApiResponseSuccess>("/usuarios/confirmar-conta", data).then((response) => response.data);
+    const responseData = await api.post<IApiResponseSuccess>("/usuarios/confirmar-email", data).then((response) => response.data);
 
     return responseData;
   } catch (error: any) {
