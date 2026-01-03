@@ -6,7 +6,7 @@ import { getProjetos } from "@/services/modules/projetoService";
 import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 
 interface IProjetoListItem {
   id: number;
@@ -19,12 +19,23 @@ export default function Projetos() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [projetos, setProjetos] = useState<IProjetoListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function getProjetosData() {
-    setIsLoadingData(true);
+  async function getProjetosData(pageToLoad = 1, isRefresh = false) {
+    if (isRefresh) {
+      setIsLoadingData(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const result = await getProjetos();
+      const result = await getProjetos({
+        page: pageToLoad,
+        limit: 10
+      });
 
       const formatedItems: IProjetoListItem[] = result?.data?.map((item) => {
         return {
@@ -34,8 +45,16 @@ export default function Projetos() {
           habilidades: item.habilidades?.map((item) => item.nome) ?? []
         }
       }) ?? [];
-
-      setProjetos(formatedItems);
+      
+      if (isRefresh) {
+        setProjetos(formatedItems);
+        setPage(1);
+      } else {
+        setProjetos((prev) => [...prev, ...formatedItems]);
+        setPage(pageToLoad);
+      }
+      
+      setHasMore(formatedItems.length >= 10);
     } catch (error: any) {
       customToastError({
         text1: 'Erro no projeto',
@@ -43,17 +62,24 @@ export default function Projetos() {
       });
     } finally {
       setIsLoadingData(false);
+      setIsLoadingMore(false);
     }
   }
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await getProjetosData();
+    await getProjetosData(1, true);
     setIsRefreshing(false);
   }, []);
 
+  const handleLoadMore = () => {
+    if (!isLoadingData && !isLoadingMore && hasMore) {
+      getProjetosData(page + 1, false);
+    }
+  };
+
   useFocusEffect(useCallback(() => {
-    getProjetosData();
+    getProjetosData(1, true);
   }, []));
 
   return (
@@ -99,6 +125,9 @@ export default function Projetos() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={isLoadingMore ? <View className="py-4"><ActivityIndicator size="small" color="#00B288" /></View> : null}
         />}
       </View>
     </SafeAreaView>

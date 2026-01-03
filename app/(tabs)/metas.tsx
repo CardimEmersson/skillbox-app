@@ -6,7 +6,7 @@ import { getMetas } from "@/services/modules/metaService";
 import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 
 interface IMetaListItem {
   id: number;
@@ -36,12 +36,23 @@ export default function Metas() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [metas, setMetas] = useState<IMetaListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function getMetasData() {
-    setIsLoadingData(true);
+  async function getMetasData(pageToLoad = 1, isRefresh = false) {
+    if (isRefresh) {
+      setIsLoadingData(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const result = await getMetas();
+      const result = await getMetas({
+        page: pageToLoad,
+        limit: 10
+      });
 
       const formatedItems: IMetaListItem[] = result?.data?.map((item) => {
         return {
@@ -52,7 +63,15 @@ export default function Metas() {
         }
       }) ?? [];
 
-      setMetas(formatedItems);
+      if (isRefresh) {
+        setMetas(formatedItems);
+        setPage(1);
+      } else {
+        setMetas((prev) => [...prev, ...formatedItems]);
+        setPage(pageToLoad);
+      }
+      
+      setHasMore(formatedItems.length >= 10);
     } catch (error: any) {
       customToastError({
         text1: 'Erro na meta',
@@ -60,17 +79,24 @@ export default function Metas() {
       });
     } finally {
       setIsLoadingData(false);
+      setIsLoadingMore(false);
     }
   }
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await getMetasData();
+    await getMetasData(1, true);
     setIsRefreshing(false);
   }, []);
 
+  const handleLoadMore = () => {
+    if (!isLoadingData && !isLoadingMore && hasMore) {
+      getMetasData(page + 1, false);
+    }
+  };
+
   useFocusEffect(useCallback(() => {
-    getMetasData();
+    getMetasData(1, true);
   }, []));
 
   return (
@@ -116,8 +142,10 @@ export default function Metas() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-        />
-        }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={isLoadingMore ? <View className="py-4"><ActivityIndicator size="small" color="#00B288" /></View> : null}
+        />}
       </View>
     </SafeAreaView>
   )

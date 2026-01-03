@@ -60,7 +60,7 @@ export default function Register() {
         Toast.show({
           type: 'success',
           text1: 'Sucesso!',
-          text2: 'Verifique seu email.',
+          text2: 'Token de confirmação enviado para seu email. Verifique seu email.',
         });
         setTimeout(() => {
           router.push({

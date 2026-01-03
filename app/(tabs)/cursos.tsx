@@ -6,7 +6,7 @@ import { getCursos } from "@/services/modules/cursoService";
 import { customToastError } from "@/utils/toast";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
-import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 
 interface ICursoListItem {
   id: number;
@@ -20,12 +20,23 @@ export default function Cursos() {
   const router = useRouter();
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [cursos, setCursos] = useState<ICursoListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function getCursosData() {
-    setIsLoadingData(true);
+  async function getCursosData(pageToLoad = 1, isRefresh = false) {
+    if (isRefresh) {
+      setIsLoadingData(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const result = await getCursos();
+      const result = await getCursos({
+        page: pageToLoad,
+        limit: 10
+      });
 
       const formatedItems: ICursoListItem[] = result?.data?.map((item) => {
         return {
@@ -36,8 +47,16 @@ export default function Cursos() {
           percentual: item.em_andamento ? 50 : 100,
         }
       }) ?? [];
-
-      setCursos(formatedItems);
+      
+      if (isRefresh) {
+        setCursos(formatedItems);
+        setPage(1);
+      } else {
+        setCursos((prev) => [...prev, ...formatedItems]);
+        setPage(pageToLoad);
+      }
+      
+      setHasMore(formatedItems.length >= 10);
     } catch (error: any) {
       customToastError({
         text1: 'Erro no curso',
@@ -45,17 +64,24 @@ export default function Cursos() {
       });
     } finally {
       setIsLoadingData(false);
+      setIsLoadingMore(false);
     }
   }
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await getCursosData();
+    await getCursosData(1, true);
     setIsRefreshing(false);
   }, []);
 
+  const handleLoadMore = () => {
+    if (!isLoadingData && !isLoadingMore && hasMore) {
+      getCursosData(page + 1, false);
+    }
+  };
+
   useFocusEffect(useCallback(() => {
-    getCursosData();
+    getCursosData(1, true);
   }, []));
 
   return (
@@ -101,6 +127,9 @@ export default function Cursos() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={isLoadingMore ? <View className="py-4"><ActivityIndicator size="small" color="#00B288" /></View> : null}
         />}
       </View>
     </SafeAreaView>

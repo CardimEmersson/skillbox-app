@@ -5,7 +5,7 @@ import { HeaderList } from '@/components/ui/HeaderList';
 import { getHabilidades } from '@/services/modules/habilidadeService';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, RefreshControl, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, FlatList, RefreshControl, SafeAreaView, View } from "react-native";
 import Toast from 'react-native-toast-message';
 
 interface IHabilidadeListItem {
@@ -27,12 +27,23 @@ export default function MinhasHabilidades() {
   
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [habilidades, setHabilidades] = useState<IHabilidadeListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function getHabilidadesData() {
-    setIsLoadingData(true);
+  async function getHabilidadesData(pageToLoad = 1, isRefresh = false) {
+    if (isRefresh) {
+      setIsLoadingData(true);
+    } else {
+      setIsLoadingMore(true);
+    }
+
     try {
-      const result = await getHabilidades();
+      const result = await getHabilidades({
+        page: pageToLoad,
+        limit: 10
+      });
 
       if (result) {
         const formatedItems: IHabilidadeListItem[] = result?.data?.map((item) => {
@@ -45,23 +56,38 @@ export default function MinhasHabilidades() {
           }
         }) ?? [];
   
-        setHabilidades(formatedItems);
+        if (isRefresh) {
+          setHabilidades(formatedItems);
+          setPage(1);
+        } else {
+          setHabilidades((prev) => [...prev, ...formatedItems]);
+          setPage(pageToLoad);
+        }
+        
+        setHasMore(formatedItems.length >= 10);
       }
     } catch (error: any) {
       Toast.show({ type: 'error', text1: 'Erro na habilidade', text2: error?.message ?? "Tente novamente mais tarde." });
     } finally {
       setIsLoadingData(false);
+      setIsLoadingMore(false);
     }
   }
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    await getHabilidadesData();
+    await getHabilidadesData(1, true);
     setIsRefreshing(false);
   }, []);
 
+  const handleLoadMore = () => {
+    if (!isLoadingData && !isLoadingMore && hasMore) {
+      getHabilidadesData(page + 1, false);
+    }
+  };
+
   useFocusEffect(useCallback(() => {
-    getHabilidadesData();
+    getHabilidadesData(1, true);
   }, []));
 
   return (
@@ -108,7 +134,9 @@ export default function MinhasHabilidades() {
             />
           }
           refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} />}
-
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={isLoadingMore ? <View className="py-4"><ActivityIndicator size="small" color="#00B288" /></View> : null}
         />}
       </View>      
     </SafeAreaView>

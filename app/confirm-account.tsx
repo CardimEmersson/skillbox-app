@@ -38,7 +38,7 @@ export default function ConfirmAccount() {
     }
     
     if (token) {
-      setValue('token', email);
+      setValue('token', token);
     }
   }, [email, token, setValue]);
 
