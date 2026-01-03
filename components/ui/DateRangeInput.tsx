@@ -1,10 +1,9 @@
 import { sizes } from '@/constants/Sizes';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import CalendarPicker from 'react-native-calendar-picker';
 
 dayjs.extend(customParseFormat);
@@ -24,12 +23,6 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const animatedIsFocused = useRef(new Animated.Value(value ? 1 : 0)).current;
-  const tintColor = useThemeColor({}, 'tint');
-  const placeholderColor = useThemeColor({}, 'icon');
-  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#ffffff10' }, 'background');
-  const disabledBackgroundColor = useThemeColor({ light: '#00000010', dark: '#ffffff10' }, 'background');
-  const disabledTextColor = useThemeColor({ light: '#00000050', dark: '#ffffff50' }, 'text');
-
   const isDisabled = useMemo(() => !editable || isLoading, [editable, isLoading]);
 
   useEffect(() => {
@@ -51,7 +44,7 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: [placeholderColor, error ? '#EF4444' : (isFocused && !isDisabled ? tintColor : placeholderColor)],
+      outputRange: ['#687076', error ? '#EF4444' : (isFocused && !isDisabled ? '#0056b2' : '#687076')],
     }),
   };
 
@@ -75,19 +68,15 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
   return (
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
-        <View style={[
-          { backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor },
-          styles.inputContainer,
-          { borderColor: error ? '#EF4444' : 'transparent', borderWidth: 1 }
-        ]} className='rounded-lg justify-center h-[58px]'>
-          <Animated.Text style={[labelStyle, { color: isDisabled ? disabledTextColor : labelStyle.color }]} className='absolute left-4'>
+        <View className={`rounded-lg justify-center h-[58px] bg-white dark:bg-white/10 border ${error ? 'border-red-500' : 'border-black/10 dark:border-transparent'} ${!isDisabled ? 'shadow-md' : ''} ${isDisabled ? 'bg-black/10 dark:bg-white/10' : ''}`}>
+          <Animated.Text style={[labelStyle, isDisabled && { color: '#00000050' }]} className='absolute left-4'>
             {label}
           </Animated.Text>
-          <Text className='text-base px-4 pt-5 text-black'>
+          <Text className={`text-base px-4 pt-5 text-black dark:text-white ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}>
             {value}
           </Text>
           <View className='absolute right-4'>
-            <AntDesign name="calendar" size={sizes.icons.md} color={isDisabled ? disabledTextColor : placeholderColor} />
+            <AntDesign name="calendar" size={sizes.icons.md} color={"#687076"} />
           </View>
         </View>
       </Pressable>
@@ -130,18 +119,3 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
 });
 
 DateRangeInput.displayName = "DateRangeInput";
-
-export const shadowInput = {
-  shadowColor: '#000',
-  shadowOffset: {
-    width: 0,
-    height: 1,
-  },
-  shadowOpacity: 0.20,
-  shadowRadius: 1.41,
-  elevation: 4,
-}
-
-const styles = StyleSheet.create({
-  inputContainer: shadowInput,
-});

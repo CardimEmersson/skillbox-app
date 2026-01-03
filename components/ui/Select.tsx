@@ -1,11 +1,9 @@
 import { sizes } from '@/constants/Sizes';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import React, { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Animated, FlatList, Modal, Pressable, Text, TextInput, View } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { CustomButton } from './CustomButton';
-import { shadowInput } from './Input';
 
 export type SelectOption = {
   label: string;
@@ -28,13 +26,6 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
   const [showModal, setShowModal] = useState(false);
 
   const animatedIsFocused = useRef(new Animated.Value(value ? 1 : 0)).current;
-  const color = useThemeColor({}, 'text');
-  const tintColor = useThemeColor({}, 'tint');
-  const placeholderColor = useThemeColor({}, 'icon');
-  const backgroundColor = useThemeColor({ light: '#ffffff', dark: '#ffffff10' }, 'background');
-  const disabledBackgroundColor = useThemeColor({ light: '#00000010', dark: '#ffffff10' }, 'background');
-  const disabledTextColor = useThemeColor({ light: '#00000050', dark: '#ffffff50' }, 'text');
-
   const isDisabled = useMemo(() => !editable || isLoading, [editable, isLoading]);
   const selectedOption = useMemo(() => options.find(option => option.value === value), [options, value]);
 
@@ -57,7 +48,7 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
-      outputRange: [placeholderColor, error ? '#EF4444' : (isFocused && !isDisabled ? tintColor : placeholderColor)],
+      outputRange: ['#687076', error ? '#EF4444' : (isFocused && !isDisabled ? '#0056b2' : '#687076')],
     }),
   };
 
@@ -84,22 +75,17 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
   return (
     <View className={props.className ? props.className : "w-full"}>
       <Pressable onPress={handlePress} disabled={isDisabled} onBlur={onBlur}>
-        <View style={[
-          { backgroundColor: isDisabled ? disabledBackgroundColor : backgroundColor },
-          styles.selectContainer,
-          { borderColor: error ? '#EF4444' : 'transparent', borderWidth: 1 }
-        ]} className='rounded-lg justify-center h-[58px]'>
-          <Animated.Text style={[labelStyle, {color: isDisabled ? disabledTextColor : labelStyle.color}]} className='absolute left-4'>
+        <View className={`rounded-lg justify-center h-[58px] bg-white dark:bg-white/10 border ${error ? 'border-red-500' : 'border-black/10 dark:border-transparent'} ${!isDisabled ? 'shadow-md' : ''} ${isDisabled ? 'bg-black/10 dark:bg-white/10' : ''}`}>
+          <Animated.Text style={[labelStyle, isDisabled && { color: '#00000050' }]} className='absolute left-4'>
             {label}
           </Animated.Text>
           <Text
-            style={{ color: isDisabled ? disabledTextColor : color }}
-            className={`text-base px-4 pt-7 ${'pr-12'}`}
+            className={`text-base px-4 pt-7 pr-12 text-black dark:text-white ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
           >
             {selectedOption?.label}
           </Text>
           <View className='absolute right-4'>
-            <AntDesign name="down" size={sizes.icons.md} color={isDisabled ? disabledTextColor : placeholderColor} />
+            <AntDesign name="down" size={sizes.icons.md} color={"#687076"} />
           </View>
         </View>
       </Pressable>
@@ -110,9 +96,9 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
         visible={showModal}
         onRequestClose={() => setShowModal(false)}
       >
-        <Pressable style={styles.modalOverlay} onPress={() => setShowModal(false)}>
-          <View style={styles.modalView} className="w-80 max-h-[80%] bg-white rounded-2xl py-9 px-7 items-center">
-            <ThemedText type="subtitle" className="mb-5">{label}</ThemedText>
+        <Pressable className="flex-1 justify-center items-center bg-black/50" onPress={() => setShowModal(false)}>
+          <View className="w-80 max-h-[80%] bg-white rounded-2xl py-9 px-7 items-center shadow-lg">
+            <ThemedText type="subtitle" className="mb-5 text-center">{label}</ThemedText>
             <FlatList
               data={options}
               keyExtractor={(item) => item.value.toString()}
@@ -126,6 +112,11 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
               )}
               className='w-full'
               showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View className="flex-1 items-center justify-center p-4">
+                  <Text className="text-gray-500 text-center">Nenhum item encontrado.</Text>
+                </View>
+              }
             />
             <Pressable
               className="rounded-2xl p-2.5 mt-4 bg-transparent"
@@ -141,23 +132,3 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
 });
 
 Select.displayName = "Select";
-
-const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalView: {
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
-  },
-  selectContainer: shadowInput
-});

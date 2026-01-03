@@ -1,7 +1,7 @@
 import { Colors } from '@/constants/Colors';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text } from 'react-native';
 import { ThemedText } from '../ThemedText';
 import { CustomButton } from './CustomButton';
 
@@ -19,53 +19,53 @@ export function ActionModal({ isVisible, onClose }: ActionModalProps) {
       visible={isVisible}
       onRequestClose={onClose}
     >
-      <View className="flex-1 justify-center items-center">
-        <View style={styles.modalView} className="w-80 bg-white rounded-2xl py-9 px-7 items-center">
-          <ThemedText type="subtitle" className="mb-5">Navegar</ThemedText>
-          <CustomButton
-            title="Habilidade"
-            onPress={() => {
-              router.push('/minhasHabilidades')
-              onClose();
-            }}
-            className='w-full mb-2'
-            colors={[...Colors.greenGradient] as [string, string, ...string[]]}
-          />
-          <CustomButton
-            title="Projeto"
-            onPress={() => {
-              router.push('/projetos')
-              onClose();
-            }}
-            className='w-full mb-2'
-            colors={[...Colors.blueGradient] as [string, string, ...string[]]}
-          />
-          <CustomButton
-            title="Meta"
-            onPress={() => {
-              router.push('/metas')
-              onClose();
-            }}
-            className='w-full mb-2'
-            colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
-          />
-          <CustomButton
-            title="Curso"
-            onPress={() => {
-              router.push('/cursos')
-              onClose();
-            }}
-            className='w-full mb-2'
-            colors={[...Colors.orangeGradient] as [string, string, ...string[]]}
-          />
-          <Pressable
-            className="rounded-2xl p-2.5 mt-4 bg-transparent"
-            onPress={onClose}
-          >
-            <Text className="text-red-500 font-bold text-center">Cancelar</Text>
-          </Pressable>
-        </View>
-      </View>
+      <Pressable className="flex-1 justify-center items-center bg-black/50" onPress={onClose}>
+        <Pressable style={styles.modalView} className="w-80 bg-white rounded-2xl py-9 px-7 items-center">
+            <ThemedText type="subtitle" className="mb-5">Navegar</ThemedText>
+            <CustomButton
+              title="Habilidade"
+              onPress={() => {
+                router.push('/minhasHabilidades')
+                onClose();
+              }}
+              className='w-full mb-2'
+              colors={[...Colors.greenGradient] as [string, string, ...string[]]}
+            />
+            <CustomButton
+              title="Projeto"
+              onPress={() => {
+                router.push('/projetos')
+                onClose();
+              }}
+              className='w-full mb-2'
+              colors={[...Colors.blueGradient] as [string, string, ...string[]]}
+            />
+            <CustomButton
+              title="Meta"
+              onPress={() => {
+                router.push('/metas')
+                onClose();
+              }}
+              className='w-full mb-2'
+              colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
+            />
+            <CustomButton
+              title="Curso"
+              onPress={() => {
+                router.push('/cursos')
+                onClose();
+              }}
+              className='w-full mb-2'
+              colors={[...Colors.orangeGradient] as [string, string, ...string[]]}
+            />
+            <Pressable
+              className="rounded-2xl p-2.5 mt-4 bg-transparent"
+              onPress={onClose}
+            >
+              <Text className="text-red-500 font-bold text-center">Cancelar</Text>
+            </Pressable>
+        </Pressable>
+      </Pressable>
     </Modal>
   );
 }
