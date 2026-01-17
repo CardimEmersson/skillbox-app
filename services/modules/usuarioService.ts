@@ -1,3 +1,4 @@
+import { IApiResponseDeleteSuccess } from "@/interfaces/apiRequest";
 import { IGetUsuario, IPutUsuarioResponse } from "@/interfaces/cadastroUsuario";
 import { getErrorsByApi } from "@/utils/getErrorApi";
 import { api } from "../api";
@@ -25,6 +26,17 @@ export async function putUsuario(data: FormData): Promise<IPutUsuarioResponse | 
     return responseData;
   } catch (error: any) {
     getErrorsByApi(error, "Não foi possivél editar o usuario! Tente mais tarde");
+  }
+  return null;
+}
+
+export async function deleteUsuario(): Promise<IApiResponseDeleteSuccess | null> {
+  try {
+    const responseData = await api.put<IApiResponseDeleteSuccess>("/usuarios/me").then((response) => response.data);
+
+    return responseData;
+  } catch (error: any) {
+    getErrorsByApi(error, "Não foi possivél excluir o usuario! Tente mais tarde");
   }
   return null;
 }

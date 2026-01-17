@@ -108,7 +108,7 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
   return (
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
-        <View className={`rounded-lg justify-center ${props.multiline ? 'h-auto' : 'min-h-[58px]'} bg-white dark:bg-white/10 border ${error ? 'border-red-500' : 'border-black/10 dark:border-transparent'} ${!isDisabled ? 'shadow-md' : ''} ${isDisabled ? 'bg-black/10 dark:bg-white/10' : ''}`}>
+        <View className={`rounded-lg justify-center ${props.multiline ? 'h-auto' : 'min-h-[58px]'} bg-white border border-black/10 ${isDisabled ? 'bg-black/10' : 'shadow-md'}`}>
           <Animated.Text style={[labelStyle, isDisabled && {color: '#00000050'}]} className='absolute left-4'>
             {label}
           </Animated.Text>
@@ -126,7 +126,7 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
               props?.onFocus?.(event);
             }}
             onBlur={onBlur}
-            className={`${props.multiline ? 'h-32 pt-7' : 'min-h-[58px] pt-7'} text-base px-4 text-black dark:text-white ${rightIcon || isLoading || isPassword ? 'pr-12' : ''} ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
+            className={`${props.multiline ? 'h-32 pt-7' : 'min-h-[58px] pt-7'} text-base px-4 text-black ${rightIcon || isLoading || isPassword ? 'pr-12' : ''} ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
             placeholderTextColor={"#687076"}
             editable={!isDisabled && !isDate}
             secureTextEntry={isPassword && !isPasswordVisible}

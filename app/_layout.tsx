@@ -1,5 +1,5 @@
 import { Inter_300Light, Inter_400Regular, Inter_600SemiBold, Inter_700Bold, useFonts } from "@expo-google-fonts/inter";
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
@@ -7,7 +7,6 @@ import 'react-native-reanimated';
 import "../global.css";
 
 import { AuthProvider } from "@/contexts/authContext";
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { useEffect } from 'react';
 import Toast from 'react-native-toast-message';
 
@@ -19,7 +18,6 @@ SplashScreen.setOptions({
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
     Inter_600SemiBold,
@@ -39,7 +37,7 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+    <ThemeProvider value={DefaultTheme}>
       <Toast />
       <AuthProvider>
         <Stack>
@@ -55,7 +53,7 @@ export default function RootLayout() {
           <Stack.Screen name="+not-found" />
         </Stack>
       </AuthProvider>
-      <StatusBar style="auto" />
+      <StatusBar style="dark" />
     </ThemeProvider>
   );
 }

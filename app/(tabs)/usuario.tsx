@@ -18,7 +18,7 @@ import { getCursos } from "@/services/modules/cursoService";
 import { getHabilidades } from "@/services/modules/habilidadeService";
 import { getMetas } from "@/services/modules/metaService";
 import { getProjetos } from "@/services/modules/projetoService";
-import { getUsuarioAuth } from "@/services/modules/usuarioService";
+import { deleteUsuario, getUsuarioAuth } from "@/services/modules/usuarioService";
 import { customToastError } from "@/utils/toast";
 import { AntDesign, FontAwesome5 } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -35,8 +35,10 @@ export const colorsSkillbox: TypeColorsSkillbox[] = ["green", "orange", "blue", 
 
 export default function Usuario() {
   const router = useRouter();
-  const { userAuth, handleUserAuth } = useContext(AuthContext);
+  const { userAuth, handleUserAuth, logout } = useContext(AuthContext);
   const [isExitModalVisible, setIsExitModalVisible] = useState(false);
+  const [isDeleteAccountModalVisible, setIsDeleteAccountModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [isLoadingData, setIsLoadingData] = useState(false);
   const [usuario, setUsuario] = useState<{
     nome: string;
@@ -136,10 +138,10 @@ export default function Usuario() {
     setIsLoadingShare(true);
     try {
       Toast.show({ type: 'info', text1: 'Gerando PDF', text2: 'Aguarde um momento...' });
-      
+
       if (viewShotPdfRef.current?.capture) {
         const uriImg = await viewShotPdfRef.current.capture();
-        
+
         const { width, height } = await new Promise<{ width: number; height: number }>((resolve, reject) => {
           Image.getSize(uriImg, (w, h) => resolve({ width: w, height: h }), (error) => reject(error));
         });
@@ -166,6 +168,29 @@ export default function Usuario() {
       Toast.show({ type: 'error', text1: 'Erro ao gerar PDF', text2: error?.message ?? "Não foi possível gerar o PDF." });
     } finally {
       setIsLoadingShare(false);
+    }
+  }
+
+  async function handleDeleteUsuario() {
+    setIsDeleting(true);
+    try {
+      await deleteUsuario();
+      Toast.show({
+        type: 'success',
+        text1: 'Sucesso!',
+        text2: 'usuario excluído com sucesso!',
+      });
+      logout();
+      setTimeout(() => router.push('/login'), 300);
+    } catch (error: any) {
+      Toast.show({ type: 'error', text1: 'Erro ao excluir', text2: error?.message ?? "Tente novamente mais tarde." });
+      customToastError({
+        text1: 'Erro ao excluir',
+        text2: error?.message ?? "Tente novamente mais tarde.",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteAccountModalVisible(false);
     }
   }
 
@@ -427,6 +452,15 @@ export default function Usuario() {
           </View>
         </View>
 
+        <View className="w-full mt-8 mb-2">
+          <Pressable
+            className="mx-auto flex-row items-center justify-center"
+            onPress={() => setIsDeleteAccountModalVisible(true)}
+          >
+            <FontAwesome5 name="trash-alt" size={16} color="#ef4444" style={{ marginRight: 8 }} />
+            <Text className="text-red-500 font-inter-bold text-lg underline">Excluir conta</Text>
+          </Pressable>
+        </View>
       </ScrollView>
       <ConfirmationModal
         isVisible={isExitModalVisible}
@@ -441,13 +475,22 @@ export default function Usuario() {
         message="Tem certeza de que deseja sair?"
         confirmButtonText="Sim, Sair"
       />
+      <ConfirmationModal
+        isVisible={isDeleteAccountModalVisible}
+        onClose={() => setIsDeleteAccountModalVisible(false)}
+        onConfirm={handleDeleteUsuario}
+        title="Excluir conta"
+        message="Tem certeza de que deseja excluir sua conta? Todos os seus dados serão perdidos permanentemente. Esta ação não pode ser desfeita."
+        confirmButtonText="Sim, Excluir"
+        isConfirming={isDeleting}
+      />
       <View style={{ position: 'absolute', left: -10000 }}>
         <ViewShot ref={viewShotRef} options={{ fileName: "meu-perfil-skillbox", format: "jpg", quality: 0.9 }}>
           <PerfilCompartilhavel
             usuario={usuario}
             habilidades={habilidades}
             cursos={cursos}
-            projetos={projetos} 
+            projetos={projetos}
             metas={metas}
           />
         </ViewShot>
@@ -458,7 +501,7 @@ export default function Usuario() {
             usuario={usuario}
             habilidades={habilidades}
             cursos={cursos}
-            projetos={projetos} 
+            projetos={projetos}
             metas={metas}
           />
         </ViewShot>

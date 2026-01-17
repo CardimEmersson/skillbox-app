@@ -75,12 +75,12 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
   return (
     <View className={props.className ? props.className : "w-full"}>
       <Pressable onPress={handlePress} disabled={isDisabled} onBlur={onBlur}>
-        <View className={`rounded-lg justify-center h-[58px] bg-white dark:bg-white/10 border ${error ? 'border-red-500' : 'border-black/10 dark:border-transparent'} ${!isDisabled ? 'shadow-md' : ''} ${isDisabled ? 'bg-black/10 dark:bg-white/10' : ''}`}>
+        <View className={`rounded-lg justify-center h-[58px] bg-white ${error ? 'border-red-500' : 'border-black/10'} ${!isDisabled ? 'shadow-md' : 'bg-black/10'}`}>
           <Animated.Text style={[labelStyle, isDisabled && { color: '#00000050' }]} className='absolute left-4'>
             {label}
           </Animated.Text>
           <Text
-            className={`text-base px-4 pt-7 pr-12 text-black dark:text-white ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
+            className={`text-base px-4 pt-7 pr-12 text-black ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
           >
             {selectedOption?.label}
           </Text>

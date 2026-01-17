@@ -7,14 +7,12 @@ import { ActionModal } from '@/components/ui/ActionModal';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { TabItem } from '@/components/ui/TabItem';
 import { Colors } from '@/constants/Colors';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { Feather } from '@expo/vector-icons';
 import Entypo from '@expo/vector-icons/Entypo';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Toast from 'react-native-toast-message';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const toggleModal = () => {
@@ -22,16 +20,16 @@ export default function TabLayout() {
   };
 
   const getColor = (focused: boolean) => {
-    return focused ? Colors[colorScheme ?? 'light'].tabIconSelected
-      : Colors[colorScheme ?? 'light'].tabIconDefault;
+    return focused ? Colors['light'].tabIconSelected
+      : Colors['light'].tabIconDefault;
   }
 
   return (
     <View style={{ flex: 1 }}>
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
-          tabBarInactiveTintColor: Colors[colorScheme ?? 'light'].tabIconDefault,
+          tabBarActiveTintColor: Colors['light'].tint,
+          tabBarInactiveTintColor: Colors['light'].tabIconDefault,
           headerShown: false,
           tabBarButton: HapticTab,
           tabBarBackground: TabBarBackground,
