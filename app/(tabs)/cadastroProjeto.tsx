@@ -306,6 +306,8 @@ export default function CadastroProjeto() {
       return () => {
         backHandler.remove();
         reset(defaultValuesCadatroProjeto);
+        setImages([]);
+        setInitialImages([]);
         scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       };
     }, [params.id, reset])

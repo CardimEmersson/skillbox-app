@@ -48,6 +48,10 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
       inputRange: [0, 1],
       outputRange: [16, 12],
     }),
+    lineHeight: animatedIsFocused.interpolate({
+      inputRange: [0, 1],
+      outputRange: [22, 16],
+    }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: ['#687076', error ? '#EF4444' : (isFocused && !isDisabled ? '#0056b2' : '#687076')],
@@ -109,7 +113,11 @@ export const Input = forwardRef<TextInput, InputProps>(({ label, value, onChange
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
         <View className={`rounded-lg justify-center ${props.multiline ? 'h-auto' : 'min-h-[58px]'} bg-white border border-black/10 ${isDisabled ? 'bg-black/10' : 'shadow-md'}`}>
-          <Animated.Text style={[labelStyle, isDisabled && {color: '#00000050'}]} className='absolute left-4'>
+          <Animated.Text
+            style={[labelStyle, isDisabled && {color: '#00000050'}]}
+            className={`absolute left-4 ${rightIcon || isPassword || isDate || isLoading ? 'right-12' : 'right-4'}`}
+            numberOfLines={1}
+          >
             {label}
           </Animated.Text>
           <TextInput

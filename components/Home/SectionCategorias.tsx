@@ -53,7 +53,6 @@ export function SectionCategorias({ className, isLoading }: SectionCategoriasPro
           ))
 
         )}
-
       </ScrollView>
     </View>
   )

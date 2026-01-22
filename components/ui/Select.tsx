@@ -19,9 +19,10 @@ export type SelectProps = Omit<React.ComponentProps<typeof TextInput>, 'onChange
   onValueChange: (value: any) => void;
   value: any;
   error?: string;
+  keyExtractor?: (item: any, index: number) => string;
 };
 
-export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValueChange, isLoading, editable = true, options, error, ...props }, ref) => {
+export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValueChange, isLoading, editable = true, options, error, keyExtractor, ...props }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [showModal, setShowModal] = useState(false);
 
@@ -45,6 +46,10 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
     fontSize: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: [16, 12],
+    }),
+    lineHeight: animatedIsFocused.interpolate({
+      inputRange: [0, 1],
+      outputRange: [22, 16],
     }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
@@ -76,11 +81,16 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
     <View className={props.className ? props.className : "w-full"}>
       <Pressable onPress={handlePress} disabled={isDisabled} onBlur={onBlur}>
         <View className={`rounded-lg justify-center h-[58px] bg-white ${error ? 'border-red-500' : 'border-black/10'} ${!isDisabled ? 'shadow-md' : 'bg-black/10'}`}>
-          <Animated.Text style={[labelStyle, isDisabled && { color: '#00000050' }]} className='absolute left-4'>
+          <Animated.Text
+            style={[labelStyle, isDisabled && { color: '#00000050' }]}
+            className='absolute left-4 right-12'
+            numberOfLines={1}
+          >
             {label}
           </Animated.Text>
           <Text
             className={`text-base px-4 pt-7 pr-12 text-black ${isDisabled ? 'text-black/50 dark:text-white/50' : ''}`}
+            numberOfLines={1}
           >
             {selectedOption?.label}
           </Text>
@@ -101,7 +111,7 @@ export const Select = forwardRef<TextInput, SelectProps>(({ label, value, onValu
             <ThemedText type="subtitle" className="mb-5 text-center">{label}</ThemedText>
             <FlatList
               data={options}
-              keyExtractor={(item) => item.value.toString()}
+              keyExtractor={keyExtractor ? (item, index) => keyExtractor(item, index) : (item) => item.value.toString()}
               renderItem={({ item }) => (
                 <CustomButton
                   title={item.label}

@@ -95,7 +95,7 @@ export default function Home() {
 
           <SectionCaixaHabilidades className='mt-10' countData={countData} isLoading={isLoadingCountData} />
           <SectionCategorias className='mt-10' isLoading={isLoadingCursos} />
-          <SectionCursos className='mt-10' isLoading={isLoadingCursos} cursosPopulares={cursosPopulares} />
+          <SectionCursos className='mt-2' isLoading={isLoadingCursos} cursosPopulares={cursosPopulares} />
 
         </View>
       </ScrollView>

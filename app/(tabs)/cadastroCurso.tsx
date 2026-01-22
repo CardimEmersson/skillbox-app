@@ -228,6 +228,8 @@ export default function CadastroCurso() {
 
       return () => {
         backHandler.remove();
+        setImages([]);
+        setInitialImages([]);
         reset(defaultValuesCadatroCurso);
       };
     }, [params.id, reset])
@@ -288,7 +290,6 @@ export default function CadastroCurso() {
               }}
               isLoading={isLoadingData}
               editable={!watch().emAndamento}
-              minimumDate={new Date()}
             />
             <Controller
               control={control}

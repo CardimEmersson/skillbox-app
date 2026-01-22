@@ -419,7 +419,7 @@ export default function Usuario() {
         <View className="flex w-full">
           <Text className="text-3xl font-inter-bold mb-2">Metas</Text>
 
-          <View className="w-full flex flex-row flex-wrap justify-between gap-1">
+          <View className="w-full flex flex-col flex-wrap justify-between gap-1">
             {isLoadingData ? (
               <>
                 <ListCardPerfilSkeleton />
@@ -436,7 +436,7 @@ export default function Usuario() {
                   onPress={() => {
                     //
                   }}
-                  className="flex-1"
+                  className="flex-1 w-full"
                   colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
                 />
               ))

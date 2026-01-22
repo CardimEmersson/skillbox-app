@@ -18,7 +18,7 @@ export function ListCardLayout({ colors, children, onEdit, showEdit = true, clas
       onResponderRelease={onEdit}>
       <LinearGradient
         colors={colors}
-        className={className ?? `py-4 px-6 relative`}
+        className={className ?? `py-4 px-6 relative ml-4`}
       >
         {children}
         {showEdit && <View className="flex flex-row absolute top-4 right-4">

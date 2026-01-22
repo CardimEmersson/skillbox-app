@@ -42,6 +42,10 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
       inputRange: [0, 1],
       outputRange: [16, 12],
     }),
+    lineHeight: animatedIsFocused.interpolate({
+      inputRange: [0, 1],
+      outputRange: [22, 16],
+    }),
     color: animatedIsFocused.interpolate({
       inputRange: [0, 1],
       outputRange: ['#687076', error ? '#EF4444' : (isFocused && !isDisabled ? '#0056b2' : '#687076')],
@@ -69,7 +73,11 @@ export const DateRangeInput = forwardRef<TextInput, DateRangeInputProps>(({ labe
     <View className={`w-full ${props.className}`}>
       <Pressable onPress={handlePress} disabled={isDisabled}>
         <View className={`rounded-lg justify-center h-[58px] bg-white border ${error ? 'border-red-500' : 'border-black/10'} ${!isDisabled ? 'shadow-md' : 'bg-black/10'}`}>
-          <Animated.Text style={[labelStyle, isDisabled && { color: '#00000050' }]} className='absolute left-4'>
+          <Animated.Text
+            style={[labelStyle, isDisabled && { color: '#00000050' }]}
+            className='absolute left-4 right-12'
+            numberOfLines={1}
+          >
             {label}
           </Animated.Text>
           <Text className={`text-base px-4 pt-5 text-black ${isDisabled ? 'text-black/50' : ''}`}>

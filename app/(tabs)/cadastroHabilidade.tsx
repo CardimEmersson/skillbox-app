@@ -485,6 +485,7 @@ export default function CadastroHabilidade() {
                       name='cursoProjetoSelecionado'
                       placeholder='Curso ou projeto'
                       className='w-3/4'
+                      keyExtractor={(item: SelectionOptionCursoProjeto) => `${item.value?.toString()}-${item.tipo}`}
                       options={optionsCursosProjetos}
                       isLoading={isLoadingCursosProjetos || isLoadingData}
                     />
