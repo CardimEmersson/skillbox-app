@@ -94,15 +94,15 @@ export function PerfilCompartilhavel({ usuario, cursos, projetos, habilidades, m
       <View className="flex w-full mb-2">
         <Text className="text-xl font-inter-bold mb-2">Metas</Text>
 
-        <View className="w-full flex flex-row flex-wrap justify-between gap-1">
-          {metas.map((item) => (
+        <View className="w-full flex flex-col flex-wrap justify-between gap-1">
+          {metas.slice(0, 3).map((item) => (
             <CustomButton
               key={item.id}
               title={item.nome}
               onPress={() => {
                 //
               }}
-              className="flex-1"
+              className="flex-1 w-full"
               colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
             />
           ))}

@@ -15,7 +15,7 @@ export function ListCard({ onPress, name, institution, workload = 0, showEdit, s
   return (
     <ListCardLayout colors={[...Colors.orangeGradient] as [string, string, ...string[]]} onEdit={onPress} showEdit={showEdit}>
       <View className='w-full flex'>
-        <Text className='font-inter-semibold text-2xl text-start'>{name}</Text>
+        <Text className='font-inter-semibold text-2xl text-start mr-5'>{name}</Text>
       </View>
       <View className='w-full flex flex-row justify-between mt-4'>
         <Text className='font-inter-light text-lg text-start'>{institution}</Text>

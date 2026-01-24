@@ -201,7 +201,7 @@ export default function Login() {
   return (
     <>
       <BackgroundGradient className='items-center justify-center'>
-        <View className='w-96 flex items-center justify-center bg-white/80 rounded-2xl p-5'>
+        <View className='w-[90%] max-w-96 flex items-center justify-center bg-white/80 rounded-2xl p-5'>
           <Image
             style={{
               width: 90,
@@ -230,13 +230,12 @@ export default function Login() {
             placeholder='********'
 
           />
-          <View className='flex-row items-center'>
-            <Pressable className='my-4' onPress={() => router.push('/forgot-password')}>
-              <Text className="text-link">Esqueceu a senha?</Text>
+          <View className='flex flex-row items-center  w-full justify-center px-2 my-4'>
+            <Pressable className='w-[45%]' onPress={() => router.push('/forgot-password')}>
+              <Text className="text-link text-center leading-6">Esqueceu a senha?</Text>
             </Pressable>
-            <Text className="mx-4">|</Text>
-            <Pressable className='my-4' onPress={() => router.push('/reset-password')}>
-              <Text className="text-link">Redefinir senha</Text>
+            <Pressable className='w-[45%]' onPress={() => router.push('/reset-password')}>
+              <Text className="text-link text-center leading-6">Redefinir senha</Text>
             </Pressable>
           </View>
           <CustomButton

@@ -160,8 +160,17 @@ export default function Usuario() {
 
         const { uri } = await Print.printToFileAsync({ html, width, height });
 
+        const nomeArquivo = userAuth?.nome?.toLowerCase() || 'perfil';
+        const newUri = `${FileSystem.cacheDirectory}${nomeArquivo}-skillbox.pdf`;
+
+        await FileSystem.deleteAsync(newUri, { idempotent: true });
+        await FileSystem.moveAsync({
+          from: uri,
+          to: newUri,
+        });
+
         if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+          await Sharing.shareAsync(newUri, { UTI: '.pdf', mimeType: 'application/pdf' });
         }
       }
     } catch (error: any) {

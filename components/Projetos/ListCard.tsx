@@ -16,7 +16,7 @@ export function ListCard({ onPress, name, description, habilidades }: ListCardPr
     <ListCardLayout colors={[...Colors.blueGradient] as [string, string, ...string[]]} onEdit={onPress}>
       <View className="w-full flex">
         <View className='w-full flex flex-row items-center'>
-          <View className='flex-1'>
+          <View className='flex-1 mr-5'>
             <Text className='font-inter-semibold text-2xl text-start'>{name}</Text>
             <Text className='font-inter-light text-lg text-start'>{description}</Text>
           </View>

@@ -28,9 +28,9 @@ export function BadgetCloseGradient({ name, onPress, colors }: BadgeCloseGradien
     <View className={"rounded-lg overflow-hidden mb-2 w-full"}>
       <LinearGradient
         colors={colors ?? ['#3874EA', '#3874EA']}
-        className="py-4 px-4 flex flex-row items-center justify-between"
+        className="py-4 px-4 flex flex-row items-center justify-between flex-wrap"
       >
-        <Text className='font-inter-semibold text-xl text-start mr-2'>{name}</Text>
+        <Text className='font-inter-semibold text-xl text-start mr-2 w-[80%]'>{name}</Text>
         <Pressable onPress={onPress}>
           <Ionicons name="close" size={24} color="black" />
         </Pressable>

@@ -26,7 +26,7 @@ export function ListCard({ onPress, name, nivel, percentual, image }: ListCardPr
             <Ionicons name="ribbon-outline" size={sizes.icons.lg} color={Colors.light.text} />
           </View>
         )}
-        <View className='flex-1 mr-auto ml-2'>
+        <View className='flex-1 ml-2 mr-5'>
           <Text className='font-inter-semibold text-2xl text-start'>{name}</Text>
           <Text className='font-inter-light text-lg text-start'>{nivel}</Text>
         </View>

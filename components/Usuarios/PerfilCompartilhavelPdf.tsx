@@ -33,7 +33,7 @@ const colorsSkillbox: TypeColorsSkillbox[] = ["green", "orange", "blue", "pink",
 export function PerfilCompartilhavelPdf({ usuario, cursos, projetos, habilidades, metas }: PerfilCompartilhavelPdfProps) {
   return (
     <View className="bg-white flex flex-row" style={{ width: 595, minHeight: 842 }}>
-      <View className="flex items-center p-4 h-full bg-[#3874EA] w-1/3">
+      <View className="flex items-center p-4 h-full bg-[#404040] w-1/3">
         {usuario?.avatar ? (
           <Image source={{ uri: usuario.avatar ?? "" }} className="w-28 h-28 rounded-full mb-4" />
         ) : (
@@ -130,15 +130,15 @@ export function PerfilCompartilhavelPdf({ usuario, cursos, projetos, habilidades
         <View className="flex w-full mb-2">
           <Text className="text-xl font-inter-bold mb-2">Metas</Text>
 
-          <View className="w-full flex flex-row flex-wrap justify-between gap-1">
-            {metas.map((item) => (
+          <View className="w-full flex flex-col flex-wrap justify-between gap-1">
+            {metas.slice(0, 3).map((item) => (
               <CustomButton
                 key={item.id}
                 title={item.nome}
                 onPress={() => {
                   //
                 }}
-                className="flex-1"
+                className="flex-1 w-full"
                 colors={[...Colors.pinkGradient] as [string, string, ...string[]]}
               />
             ))}
